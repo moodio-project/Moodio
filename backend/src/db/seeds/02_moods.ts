@@ -7,36 +7,32 @@ export async function seed(knex: Knex): Promise<void> {
   // Insert seed data
   await knex('moods').insert([
     {
-      user_id: 1,
-      mood_type: 'happy',
+      user_id: 7,
+      mood: 'happy',
       intensity: 8,
-      description: 'Feeling great today!',
-      created_at: new Date(),
-      updated_at: new Date()
+      note: 'Feeling great today!',
+      created_at: new Date()
     },
     {
-      user_id: 1,
-      mood_type: 'calm',
+      user_id: 7,
+      mood: 'calm',
       intensity: 6,
-      description: 'Relaxed and peaceful',
-      created_at: new Date(),
-      updated_at: new Date()
+      note: 'Relaxed and peaceful',
+      created_at: new Date()
     },
     {
-      user_id: 2,
-      mood_type: 'energetic',
+      user_id: 8,
+      mood: 'energetic',
       intensity: 9,
-      description: 'Full of energy and ready to go!',
-      created_at: new Date(),
-      updated_at: new Date()
+      note: 'Full of energy and ready to go!',
+      created_at: new Date()
     },
     {
-      user_id: 3,
-      mood_type: 'melancholy',
+      user_id: 9,
+      mood: 'melancholy',
       intensity: 4,
-      description: 'A bit reflective today',
-      created_at: new Date(),
-      updated_at: new Date()
+      note: 'A bit reflective today',
+      created_at: new Date()
     }
   ]);
 } 
