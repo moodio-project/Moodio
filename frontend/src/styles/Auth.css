@@ -21,6 +21,57 @@
   color: #2c3e50;
 }
 
+/* Spotify Login Section */
+.spotify-login-section {
+  margin-bottom: 1.5rem;
+}
+
+.btn-spotify {
+  background: #1DB954;
+  color: white;
+  border: none;
+  padding: 12px 24px;
+  border-radius: 6px;
+  font-size: 16px;
+  font-weight: 600;
+  cursor: pointer;
+  width: 100%;
+  transition: background-color 0.2s ease;
+}
+
+.btn-spotify:hover {
+  background: #1ed760;
+}
+
+.btn-spotify:disabled {
+  background: #b3b3b3;
+  cursor: not-allowed;
+}
+
+/* Divider */
+.divider {
+  text-align: center;
+  margin: 1.5rem 0;
+  position: relative;
+}
+
+.divider::before {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 0;
+  right: 0;
+  height: 1px;
+  background: #e0e0e0;
+}
+
+.divider span {
+  background: white;
+  padding: 0 1rem;
+  color: #7f8c8d;
+  font-size: 14px;
+}
+
 .auth-form {
   display: flex;
   flex-direction: column;

@@ -3,16 +3,32 @@ import { api } from '../adapters/api';
 
 interface User {
   id: number;
-  username: string;
+  spotify_id?: string;
+  display_name?: string;
   email: string;
+  avatar_url?: string;
+}
+
+interface SpotifyProfile {
+  id: string;
+  display_name: string;
+  email: string;
+  images: Array<{ url: string; height: number; width: number }>;
+  external_urls: { spotify: string };
+  followers: { total: number };
+  country: string;
+  product: string;
 }
 
 interface AuthContextType {
   user: User | null;
+  spotifyProfile: SpotifyProfile | null;
   token: string | null;
   login: (email: string, password: string) => Promise<void>;
+  spotifyLogin: () => Promise<void>;
   register: (username: string, email: string, password: string) => Promise<void>;
   logout: () => void;
+  getProfile: () => Promise<void>;
   isLoading: boolean;
 }
 
@@ -32,18 +48,34 @@ interface AuthProviderProps {
 
 export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const [user, setUser] = useState<User | null>(null);
+  const [spotifyProfile, setSpotifyProfile] = useState<SpotifyProfile | null>(null);
   const [token, setToken] = useState<string | null>(localStorage.getItem('token'));
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
     // Check if user is logged in on app start
     if (token) {
-      // You could verify the token here
-      setIsLoading(false);
+      getProfile();
     } else {
       setIsLoading(false);
     }
   }, [token]);
+
+  const getProfile = async () => {
+    try {
+      const response = await api.get('/auth/profile');
+      const { user: userData, spotify_profile } = response.data;
+      
+      setUser(userData);
+      setSpotifyProfile(spotify_profile);
+    } catch (error) {
+      console.error('Failed to get profile:', error);
+      // If profile fetch fails, clear auth state
+      logout();
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   const login = async (email: string, password: string) => {
     try {
@@ -55,6 +87,18 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       localStorage.setItem('token', token);
     } catch (error) {
       throw new Error('Login failed');
+    }
+  };
+
+  const spotifyLogin = async () => {
+    try {
+      const response = await api.get('/auth/login');
+      const { authUrl } = response.data;
+      
+      // Redirect to Spotify OAuth
+      window.location.href = authUrl;
+    } catch (error) {
+      throw new Error('Spotify login failed');
     }
   };
 
@@ -73,16 +117,23 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
   const logout = () => {
     setUser(null);
+    setSpotifyProfile(null);
     setToken(null);
     localStorage.removeItem('token');
+    
+    // Call backend logout
+    api.post('/auth/logout').catch(console.error);
   };
 
   const value = {
     user,
+    spotifyProfile,
     token,
     login,
+    spotifyLogin,
     register,
     logout,
+    getProfile,
     isLoading
   };
 

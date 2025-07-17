@@ -4,7 +4,7 @@
   "description": "Backend API for Moodio application",
   "main": "dist/server.js",
   "scripts": {
-    "dev": "nodemon src/server.ts",
+    "dev": "nodemon src/index.ts",
     "build": "tsc",
     "start": "node dist/server.js",
     "db:migrate": "knex migrate:latest",
@@ -22,7 +22,10 @@
   "author": "",
   "license": "MIT",
   "dependencies": {
+    "@types/cookie-session": "^2.0.49",
+    "axios": "^1.10.0",
     "bcryptjs": "^2.4.3",
+    "cookie-session": "^2.1.1",
     "cors": "^2.8.5",
     "dotenv": "^16.6.1",
     "express": "^4.18.2",

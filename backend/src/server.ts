@@ -15,6 +15,12 @@ dotenv.config();
 
 const app = express();
 
+// Basic logging middleware
+app.use((req, res, next) => {
+  console.log(`${new Date().toISOString()} - ${req.method} ${req.path}`);
+  next();
+});
+
 app.use(cors({ origin: true, credentials: true }));
 app.use(express.json());
 app.use(cookieSession({
@@ -25,6 +31,15 @@ app.use(cookieSession({
   secure: process.env.NODE_ENV === 'production',
   sameSite: 'lax',
 }));
+
+// Health check route
+app.get('/api/health', (req, res) => {
+  res.status(200).json({ 
+    status: 'OK', 
+    timestamp: new Date().toISOString(),
+    uptime: process.uptime()
+  });
+});
 
 app.use('/api/auth', authRoutes);
 app.use('/api/moods', checkAuth, moodRoutes);
