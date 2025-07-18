@@ -1,83 +1,51 @@
-import React, { useState } from 'react';
-import { useAuth } from '../contexts/AuthContext';
-
-const mockTopTracks = [
-  {
-    title: 'Blinding Lights',
-    artist: 'The Weeknd',
-    albumArt: 'https://i.scdn.co/image/ab67616d0000b273e5b8b7b7b7b7b7b7b7b7b7b7',
-  },
-  {
-    title: 'Levitating',
-    artist: 'Dua Lipa',
-    albumArt: 'https://i.scdn.co/image/ab67616d0000b273b7b7b7b7b7b7b7b7b7b7b7b7',
-  },
-  {
-    title: 'Watermelon Sugar',
-    artist: 'Harry Styles',
-    albumArt: 'https://i.scdn.co/image/ab67616d0000b273b7b7b7b7b7b7b7b7b7b7b7b7',
-  },
-];
+import React from 'react';
+import Navbar from '../components/Navbar';
+import { Button } from '../components/ui/button';
 
 const Dashboard: React.FC = () => {
-  const {
-    spotifyProfile,
-    spotifyProfileLoading,
-    spotifyProfileError,
-    isLoading,
-  } = useAuth();
+  const today = new Date().toLocaleDateString(undefined, {
+    weekday: 'long', year: 'numeric', month: 'long', day: 'numeric',
+  });
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-[#191414] to-[#1DB954]/10 flex flex-col items-center py-8 px-2">
-      <div className="w-full max-w-3xl bg-[#222] rounded-xl shadow-lg p-6 mb-8 flex flex-col items-center">
-        {/* Profile Section */}
-        {spotifyProfileLoading || isLoading ? (
-          <div className="w-full flex justify-center items-center py-8">
-            <span className="text-gray-400 text-lg">Loading profile...</span>
-          </div>
-        ) : spotifyProfile ? (
-          <div className="flex flex-col items-center gap-2">
-            <img
-              src={spotifyProfile.images?.[0]?.url || '/default-avatar.png'}
-              alt="Spotify Avatar"
-              className="w-24 h-24 rounded-full border-4 border-[#1DB954] shadow-md object-cover"
-            />
-            <h2 className="text-2xl font-bold text-white mt-2">{spotifyProfile.display_name}</h2>
-            <span className="text-sm text-gray-400">Spotify User</span>
-          </div>
-        ) : spotifyProfileError ? (
-          <div className="w-full flex justify-center items-center py-8">
-            <span className="text-red-400 text-lg">{spotifyProfileError}</span>
-          </div>
-        ) : (
-          <div className="w-full flex justify-center items-center py-8">
-            <span className="text-gray-400 text-lg">Welcome, Guest</span>
-          </div>
-        )}
-      </div>
+    <div className="min-h-screen flex bg-gradient-to-br from-[#191414] to-[#1DB954]/10">
+      {/* Sidebar */}
+      <aside className="hidden md:block h-screen sticky top-0">
+        <Navbar />
+      </aside>
 
-      {/* Top Tracks Section */}
-      <div className="w-full max-w-3xl bg-[#181818] rounded-xl shadow p-6">
-        <h3 className="text-xl font-semibold text-white mb-4">Your Top Tracks</h3>
-        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6">
-          {mockTopTracks.map((track, idx) => (
-            <div
-              key={idx}
-              className="bg-[#232323] rounded-lg p-4 flex flex-col items-center hover:bg-[#282828] transition"
-            >
-              <img
-                src={track.albumArt}
-                alt={track.title}
-                className="w-20 h-20 rounded shadow mb-3 object-cover"
-              />
-              <div className="text-center">
-                <div className="text-white font-medium text-base truncate">{track.title}</div>
-                <div className="text-green-400 text-sm truncate">{track.artist}</div>
-              </div>
-            </div>
-          ))}
-        </div>
-      </div>
+      {/* Main Content */}
+      <main className="flex-1 flex flex-col min-h-screen">
+        {/* Top Bar/Header */}
+        <header className="w-full bg-[#181818] border-b border-[#232323] px-4 py-4 flex flex-col md:flex-row items-center justify-between gap-2 shadow-sm">
+          <div className="flex flex-col md:flex-row md:items-center gap-2">
+            <h1 className="text-2xl font-bold text-white">Welcome to Moodio!</h1>
+            <span className="text-sm text-gray-400 ml-0 md:ml-4">{today}</span>
+          </div>
+          <Button variant="spotify" size="sm" className="ml-auto">Log Out</Button>
+        </header>
+
+        {/* Main Panel */}
+        <section className="flex-1 w-full max-w-5xl mx-auto p-4 grid grid-cols-1 md:grid-cols-2 gap-6 mt-6">
+          {/* Mood Summary Block */}
+          <section className="bg-[#232323] rounded-xl shadow p-6 flex flex-col gap-2" aria-label="Mood Summary">
+            <h2 className="text-lg font-semibold text-white mb-2">Mood Summary</h2>
+            <div className="text-gray-400">Your recent mood logs and stats will appear here.</div>
+          </section>
+
+          {/* Currently Listening Block */}
+          <section className="bg-[#232323] rounded-xl shadow p-6 flex flex-col gap-2" aria-label="Currently Listening">
+            <h2 className="text-lg font-semibold text-white mb-2">Currently Listening</h2>
+            <div className="text-gray-400">Spotify track info will appear here.</div>
+          </section>
+
+          {/* Charts Block (spans both columns on desktop) */}
+          <section className="bg-[#232323] rounded-xl shadow p-6 flex flex-col gap-2 md:col-span-2" aria-label="Charts">
+            <h2 className="text-lg font-semibold text-white mb-2">Charts</h2>
+            <div className="text-gray-400">Mood and music data visualizations coming soon.</div>
+          </section>
+        </section>
+      </main>
     </div>
   );
 };
