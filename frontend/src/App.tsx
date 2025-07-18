@@ -1,20 +1,31 @@
 import React from 'react';
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import Navbar from './components/Navbar';
-import MusicPlayer from './components/MusicPlayer';
-import MoodLogForm from './components/MoodLogForm';
-import MoodChart from './components/MoodChart';
+import Home from './pages/Home';
+import Dashboard from './pages/Dashboard';
+import Login from './pages/Login';
+import Register from './pages/Register';
+import Profile from './pages/Profile';
+import MoodTracker from './pages/MoodTracker';
+import MusicDiscovery from './pages/MusicDiscovery';
+import { AuthProvider } from './contexts/AuthContext';
 
 const App: React.FC = () => {
   return (
-    <BrowserRouter>
-      <Navbar />
-      <Routes>
-        <Route path="/" element={<MoodChart />} />
-        <Route path="/log" element={<MoodLogForm />} />
-        <Route path="/player" element={<MusicPlayer />} />
-      </Routes>
-    </BrowserRouter>
+    <AuthProvider>
+      <BrowserRouter>
+        <Navbar />
+        <Routes>
+          <Route path="/" element={<Home />} />
+          <Route path="/dashboard" element={<Dashboard />} />
+          <Route path="/login" element={<Login />} />
+          <Route path="/register" element={<Register />} />
+          <Route path="/profile" element={<Profile />} />
+          <Route path="/mood-tracker" element={<MoodTracker />} />
+          <Route path="/music-discovery" element={<MusicDiscovery />} />
+        </Routes>
+      </BrowserRouter>
+    </AuthProvider>
   );
 };
 

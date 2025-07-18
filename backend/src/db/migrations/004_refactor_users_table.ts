@@ -7,8 +7,14 @@ export async function up(knex: Knex): Promise<void> {
   });
 
   // Drop old users/spotify_users tables if they exist
-  await knex.schema.hasTable('users').then(exists => { if (exists) return knex.schema.dropTable('users'); });
-  await knex.schema.hasTable('spotify_users').then(exists => { if (exists) return knex.schema.dropTable('spotify_users'); });
+  await knex.schema.hasTable('users').then(exists => { 
+    if (exists) return knex.schema.dropTable('users'); 
+    return Promise.resolve();
+  });
+  await knex.schema.hasTable('spotify_users').then(exists => { 
+    if (exists) return knex.schema.dropTable('spotify_users'); 
+    return Promise.resolve();
+  });
 
   // Create new users table
   await knex.schema.createTable('users', (table) => {

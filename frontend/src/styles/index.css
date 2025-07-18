@@ -1,175 +1,215 @@
-/* Reset and base styles */
-* {
-  margin: 0;
-  padding: 0;
-  box-sizing: border-box;
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  * {
+    @apply border-border;
 }
 
 body {
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen',
-    'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue',
-    sans-serif;
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
-  background-color: #f5f5f5;
-  color: #333;
-  line-height: 1.6;
+    @apply bg-background text-text font-sans antialiased;
+    font-family: 'Inter', system-ui, sans-serif;
+  }
+  
+  html {
+    @apply scroll-smooth;
+  }
 }
 
-/* Container and layout */
-.container {
-  max-width: 1200px;
-  margin: 0 auto;
-  padding: 0 20px;
+@layer components {
+  /* Layout Components */
+  .layout-container {
+    @apply min-h-screen bg-background;
+  }
+  
+  .sidebar {
+    @apply w-64 bg-background-secondary border-r border-border fixed left-0 top-0 h-full z-50;
 }
 
 .main-content {
-  min-height: calc(100vh - 80px);
-  padding: 20px 0;
+    @apply ml-64 min-h-screen bg-background;
 }
 
-/* Typography */
-h1, h2, h3, h4, h5, h6 {
-  margin-bottom: 1rem;
-  font-weight: 600;
+  .topbar {
+    @apply h-16 bg-background-secondary border-b border-border flex items-center justify-between px-6 sticky top-0 z-40;
 }
 
-h1 {
-  font-size: 2.5rem;
-  color: #2c3e50;
+  /* Card Components */
+  .card {
+    @apply bg-background-secondary rounded-lg border border-border shadow-card hover:shadow-spotify transition-all duration-300;
 }
 
-h2 {
-  font-size: 2rem;
-  color: #34495e;
+  .card-header {
+    @apply p-6 border-b border-border;
+  }
+  
+  .card-content {
+    @apply p-6;
 }
 
-h3 {
-  font-size: 1.5rem;
-  color: #34495e;
+  .card-footer {
+    @apply p-6 border-t border-border;
 }
 
-p {
-  margin-bottom: 1rem;
-}
-
-/* Buttons */
+  /* Button Components */
 .btn {
-  display: inline-block;
-  padding: 12px 24px;
-  border: none;
-  border-radius: 6px;
-  font-size: 1rem;
-  font-weight: 500;
-  text-decoration: none;
-  cursor: pointer;
-  transition: all 0.3s ease;
-  text-align: center;
+    @apply inline-flex items-center justify-center rounded-md text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 disabled:opacity-50 disabled:pointer-events-none;
 }
 
 .btn-primary {
-  background-color: #3498db;
-  color: white;
-}
-
-.btn-primary:hover {
-  background-color: #2980b9;
+    @apply bg-accent text-white hover:bg-accent-hover shadow-glow;
 }
 
 .btn-secondary {
-  background-color: #95a5a6;
-  color: white;
+    @apply bg-background-tertiary text-text hover:bg-border border border-border;
 }
 
-.btn-secondary:hover {
-  background-color: #7f8c8d;
+  .btn-ghost {
+    @apply hover:bg-background-tertiary text-text-muted hover:text-text;
+  }
+  
+  .btn-spotify {
+    @apply bg-[#1DB954] text-white hover:bg-[#1ed760] shadow-glow;
 }
 
-.btn-danger {
-  background-color: #e74c3c;
-  color: white;
+  .btn-sm {
+    @apply h-8 px-3 text-xs;
+  }
+  
+  .btn-md {
+    @apply h-10 px-4 py-2;
+  }
+  
+  .btn-lg {
+    @apply h-12 px-8 text-base;
+  }
+  
+  /* Form Components */
+  .input {
+    @apply flex h-10 w-full rounded-md border border-border bg-background-secondary px-3 py-2 text-sm text-text placeholder:text-text-muted focus:outline-none focus:ring-2 focus:ring-accent focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50;
 }
 
-.btn-danger:hover {
-  background-color: #c0392b;
+  .textarea {
+    @apply flex min-h-[80px] w-full rounded-md border border-border bg-background-secondary px-3 py-2 text-sm text-text placeholder:text-text-muted focus:outline-none focus:ring-2 focus:ring-accent focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50;
+  }
+  
+  .select {
+    @apply flex h-10 w-full rounded-md border border-border bg-background-secondary px-3 py-2 text-sm text-text focus:outline-none focus:ring-2 focus:ring-accent focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50;
 }
 
-.btn:disabled {
-  opacity: 0.6;
-  cursor: not-allowed;
+  /* Navigation Components */
+  .nav-item {
+    @apply flex items-center gap-3 px-4 py-3 text-text-muted hover:text-text hover:bg-background-tertiary rounded-md transition-colors;
 }
 
-/* Forms */
-.form-group {
-  margin-bottom: 1rem;
+  .nav-item.active {
+    @apply text-accent bg-accent/10;
+  }
+  
+  /* Music Player Components */
+  .music-player {
+    @apply bg-background-secondary border-t border-border p-4;
+  }
+  
+  .progress-bar {
+    @apply w-full h-1 bg-border rounded-full overflow-hidden;
 }
 
-.form-group label {
-  display: block;
-  margin-bottom: 0.5rem;
-  font-weight: 500;
-  color: #2c3e50;
+  .progress-fill {
+    @apply h-full bg-accent transition-all duration-300;
+  }
+  
+  .control-btn {
+    @apply p-2 rounded-full hover:bg-background-tertiary text-text-muted hover:text-text transition-colors;
+  }
+  
+  .play-btn {
+    @apply w-12 h-12 bg-accent text-white rounded-full hover:bg-accent-hover shadow-glow transition-all duration-300;
+  }
+  
+  /* Song Card Components */
+  .song-card {
+    @apply bg-background-secondary rounded-lg p-4 hover:bg-background-tertiary transition-all duration-300 cursor-pointer group;
+  }
+  
+  .song-card:hover {
+    @apply shadow-spotify;
 }
 
-.form-group input,
-.form-group select,
-.form-group textarea {
-  width: 100%;
-  padding: 12px;
-  border: 1px solid #ddd;
-  border-radius: 6px;
-  font-size: 1rem;
-  transition: border-color 0.3s ease;
+  .song-artwork {
+    @apply w-full aspect-square rounded-md object-cover;
+  }
+  
+  /* Modal Components */
+  .modal-overlay {
+    @apply fixed inset-0 bg-black/50 backdrop-blur-sm z-50;
+  }
+  
+  .modal-content {
+    @apply fixed top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 bg-background-secondary rounded-lg border border-border shadow-spotify p-6 w-full max-w-md;
+  }
+  
+  /* Tab Components */
+  .tab-list {
+    @apply flex border-b border-border;
+  }
+  
+  .tab-trigger {
+    @apply px-4 py-2 text-text-muted hover:text-text border-b-2 border-transparent hover:border-accent transition-colors;
+  }
+  
+  .tab-trigger[data-state="active"] {
+    @apply text-accent border-accent;
 }
 
-.form-group input:focus,
-.form-group select:focus,
-.form-group textarea:focus {
-  outline: none;
-  border-color: #3498db;
-  box-shadow: 0 0 0 2px rgba(52, 152, 219, 0.2);
+  /* Utility Classes */
+  .text-gradient {
+    @apply bg-gradient-to-r from-accent to-highlight-lavender bg-clip-text text-transparent;
+  }
+  
+  .bg-gradient-primary {
+    background: linear-gradient(135deg, #22C55E 0%, #16A34A 100%);
+  }
+  
+  .bg-gradient-secondary {
+    background: linear-gradient(135deg, #A78BFA 0%, #F472B6 100%);
+  }
+  
+  .glass-effect {
+    @apply backdrop-blur-md bg-background-secondary/80 border border-border/50;
 }
 
-/* Cards */
-.card {
-  background: white;
-  border-radius: 8px;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-  padding: 1.5rem;
-  margin-bottom: 1rem;
-}
-
-/* Responsive design */
+  /* Responsive Design */
 @media (max-width: 768px) {
-  .container {
-    padding: 0 15px;
+    .sidebar {
+      @apply w-full h-16 bottom-0 top-auto border-t border-r-0;
   }
   
-  h1 {
-    font-size: 2rem;
+    .main-content {
+      @apply ml-0 pb-16;
   }
   
-  h2 {
-    font-size: 1.5rem;
-  }
-  
-  .btn {
-    padding: 10px 20px;
-    font-size: 0.9rem;
+    .topbar {
+      @apply px-4;
+    }
   }
 }
 
-@media (max-width: 480px) {
-  .main-content {
-    padding: 15px 0;
+@layer utilities {
+  .scrollbar-hide {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
   }
   
-  h1 {
-    font-size: 1.8rem;
+  .scrollbar-hide::-webkit-scrollbar {
+    display: none;
   }
   
-  .btn {
-    padding: 8px 16px;
-    font-size: 0.85rem;
+  .text-balance {
+    text-wrap: balance;
   }
 } 

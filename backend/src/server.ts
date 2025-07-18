@@ -10,6 +10,7 @@ import musicRoutes from './routes/musicRoutes';
 import authRoutes from './routes/authRoutes';
 import spotifyRoutes from './routes/spotifyRoutes';
 import artistRoutes from './routes/artistRoutes';
+import aiRoutes from './routes/aiRoutes';
 
 dotenv.config();
 
@@ -46,6 +47,7 @@ app.use('/api/moods', checkAuth, moodRoutes);
 app.use('/api/music', checkAuth, musicRoutes);
 app.use('/api/spotify', checkAuth, spotifyRoutes);
 app.use('/api/artists', checkAuth, artistRoutes);
+app.use('/api/ai', aiRoutes); // AI routes (some endpoints don't require auth)
 app.use('/api/users', userRoutes);
 
 app.use(errorHandler);
