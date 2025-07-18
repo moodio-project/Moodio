@@ -30,6 +30,9 @@ interface AuthContextType {
   logout: () => void;
   getProfile: () => Promise<void>;
   isLoading: boolean;
+  spotifyProfileLoading: boolean;
+  spotifyProfileError: string | null;
+  fetchSpotifyProfile: () => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -49,6 +52,8 @@ interface AuthProviderProps {
 export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const [user, setUser] = useState<User | null>(null);
   const [spotifyProfile, setSpotifyProfile] = useState<SpotifyProfile | null>(null);
+  const [spotifyProfileLoading, setSpotifyProfileLoading] = useState(false);
+  const [spotifyProfileError, setSpotifyProfileError] = useState<string | null>(null);
   const [token, setToken] = useState<string | null>(localStorage.getItem('token'));
   const [isLoading, setIsLoading] = useState(true);
 
@@ -61,6 +66,20 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     }
   }, [token]);
 
+  const fetchSpotifyProfile = async () => {
+    setSpotifyProfileLoading(true);
+    setSpotifyProfileError(null);
+    try {
+      const response = await api.get('/spotify/profile', { withCredentials: true });
+      setSpotifyProfile(response.data);
+    } catch (error: any) {
+      setSpotifyProfile(null);
+      setSpotifyProfileError('Failed to fetch Spotify profile');
+    } finally {
+      setSpotifyProfileLoading(false);
+    }
+  };
+
   const getProfile = async () => {
     try {
       const response = await api.get('/auth/profile');
@@ -68,6 +87,8 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       
       setUser(userData);
       setSpotifyProfile(spotify_profile);
+      // Fetch Spotify profile from backend if authenticated
+      await fetchSpotifyProfile();
     } catch (error) {
       console.error('Failed to get profile:', error);
       // If profile fetch fails, clear auth state
@@ -134,7 +155,10 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     register,
     logout,
     getProfile,
-    isLoading
+    isLoading,
+    spotifyProfileLoading,
+    spotifyProfileError,
+    fetchSpotifyProfile,
   };
 
   return (
