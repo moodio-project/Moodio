@@ -1,6 +1,5 @@
 import React from 'react';
 import { NavLink } from 'react-router-dom';
-import { Button } from './ui/button';
 
 const navLinks = [
   { name: 'Dashboard', to: '/dashboard', icon: '🏠' },

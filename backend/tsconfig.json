@@ -25,6 +25,6 @@
       "@/*": ["src/*"]
     }
   },
-  "include": ["src/**/*", "knexfile.ts"],
+  "include": ["src/**/*", "knexfile.ts", "server.ts", "index.ts"],
   "exclude": ["node_modules", "dist"]
 } 

@@ -3,6 +3,17 @@ import aiController from '../controllers/aiController';
 
 const router = express.Router();
 
+// Test route to check environment variables
+router.get('/test-env', (req, res) => {
+  res.json({
+    genius_key: process.env.GENIUS_API_KEY ? 'Present' : 'Missing',
+    openai_key: process.env.OPENAI_API_KEY ? 'Present' : 'Missing',
+    spotify_client: process.env.SPOTIFY_CLIENT_ID ? 'Present' : 'Missing',
+    spotify_secret: process.env.SPOTIFY_CLIENT_SECRET ? 'Present' : 'Missing',
+    database_url: process.env.DATABASE_URL ? 'Present' : 'Missing'
+  });
+});
+
 // AI-powered mood analysis
 router.post('/analyze-mood', aiController.analyzeMood);
 

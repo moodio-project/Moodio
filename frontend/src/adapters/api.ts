@@ -88,4 +88,45 @@ export const musicAPI = {
   
   delete: (id: number) => 
     api.delete(`/music/${id}`),
+};
+
+export const aiAPI = {
+  // AI Mood Analysis
+  analyzeMood: (description: string, intensity: number) => 
+    api.post('/ai/analyze-mood', { description, intensity }),
+  
+  // AI Song Recommendations
+  getSongRecommendations: (mood: string, limit: number = 5) => 
+    api.get(`/ai/song-recommendations?mood=${encodeURIComponent(mood)}&limit=${limit}`),
+  
+  // Smart Recommendations based on user history
+  getSmartRecommendations: (currentMood: string) => 
+    api.post('/ai/smart-recommendations', { currentMood }),
+  
+  // Genius API Integration
+  searchSongs: (query: string, limit: number = 10) => 
+    api.get(`/ai/search-songs?query=${encodeURIComponent(query)}&limit=${limit}`),
+  
+  getArtistDetails: (artistId: number) => 
+    api.get(`/ai/artist/${artistId}`),
+  
+  getSongDetails: (songId: number) => 
+    api.get(`/ai/song/${songId}`),
+  
+  getLyricsUrl: (songPath: string) => 
+    api.get(`/ai/lyrics/${encodeURIComponent(songPath)}`),
+};
+
+export const spotifyAPI = {
+  getProfile: () => 
+    api.get('/spotify/profile'),
+  
+  getTopTracks: () => 
+    api.get('/spotify/top-tracks'),
+  
+  getCurrentlyPlaying: () => 
+    api.get('/spotify/currently-playing'),
+  
+  searchTracks: (query: string) => 
+    api.get(`/spotify/search?q=${encodeURIComponent(query)}`),
 }; 

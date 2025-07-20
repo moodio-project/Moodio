@@ -3,6 +3,7 @@ import { api } from '../adapters/api';
 
 interface User {
   id: number;
+  username?: string;
   spotify_id?: string;
   display_name?: string;
   email: string;
@@ -70,7 +71,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     setSpotifyProfileLoading(true);
     setSpotifyProfileError(null);
     try {
-      const response = await api.get('/spotify/profile', { withCredentials: true });
+      const response = await api.get('/spotify/profile');
       setSpotifyProfile(response.data);
     } catch (error: any) {
       setSpotifyProfile(null);
@@ -82,7 +83,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
   const getProfile = async () => {
     try {
-      const response = await api.get('/auth/profile');
+      const response = await api.get('/auth/me');
       const { user: userData, spotify_profile } = response.data;
       
       setUser(userData);
@@ -100,7 +101,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
   const login = async (email: string, password: string) => {
     try {
-      const response = await api.post('/users/login', { email, password });
+      const response = await api.post('/auth/login', { email, password });
       const { user, token } = response.data;
       
       setUser(user);
@@ -113,7 +114,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
   const spotifyLogin = async () => {
     try {
-      const response = await api.get('/auth/login');
+      const response = await api.get('/auth/spotify');
       const { authUrl } = response.data;
       
       // Redirect to Spotify OAuth
@@ -125,7 +126,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
   const register = async (username: string, email: string, password: string) => {
     try {
-      const response = await api.post('/users/register', { username, email, password });
+      const response = await api.post('/auth/signup', { username, email, password });
       const { user, token } = response.data;
       
       setUser(user);

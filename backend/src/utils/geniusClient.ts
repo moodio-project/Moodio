@@ -1,7 +1,5 @@
 import axios from 'axios';
-import dotenv from 'dotenv';
-
-dotenv.config();
+import { Client } from 'genius-lyrics';
 
 interface GeniusSearchResult {
   response: {
@@ -63,12 +61,15 @@ interface GeniusArtist {
 class GeniusClient {
   private apiKey: string;
   private baseURL = 'https://api.genius.com';
+  private client: Client;
 
   constructor() {
     this.apiKey = process.env.GENIUS_API_KEY || '';
     if (!this.apiKey) {
+      console.error('Available env vars:', Object.keys(process.env).filter(key => key.includes('GENIUS')));
       throw new Error('Genius API key not found in environment variables');
     }
+    this.client = new Client(this.apiKey);
   }
 
   private async makeRequest(endpoint: string): Promise<any> {
@@ -85,86 +86,89 @@ class GeniusClient {
   }
 
   async searchSongs(query: string, limit: number = 10): Promise<any[]> {
-    const data = await this.makeRequest(`/search?q=${encodeURIComponent(query)}`);
-    
-    if (!data.response?.hits) {
+    try {
+      const searches = await this.client.songs.search(query);
+      return searches.slice(0, limit).map(song => ({
+        id: song.id,
+        title: song.title,
+        title_with_featured: song.title,
+        artist: song.artist.name,
+        artist_id: song.artist.id,
+        url: song.url,
+        path: song.url, // Using url as path since path doesn't exist
+        thumbnail: song.thumbnail,
+      }));
+    } catch (error: any) {
+      console.error('Genius search error:', error);
       return [];
     }
-
-    return data.response.hits
-      .slice(0, limit)
-      .map((hit: any) => ({
-        id: hit.result.id,
-        title: hit.result.title,
-        title_with_featured: hit.result.title_with_featured,
-        artist: hit.result.primary_artist.name,
-        artist_id: hit.result.primary_artist.id,
-        url: hit.result.url,
-        path: hit.result.path,
-      }));
   }
 
   async getSongDetails(songId: number): Promise<any> {
-    const data = await this.makeRequest(`/songs/${songId}`);
-    
-    if (!data.response?.song) {
-      throw new Error('Song not found');
+    try {
+      const song = await this.client.songs.get(songId);
+      return {
+        id: song.id,
+        title: song.title,
+        title_with_featured: song.title,
+        artist: song.artist.name,
+        artist_id: song.artist.id,
+        url: song.url,
+        path: song.url, // Using url as path since path doesn't exist
+        thumbnail: song.thumbnail,
+        releaseDate: song.releasedAt, // Using releasedAt instead of releaseDate
+      };
+    } catch (error: any) {
+      throw new Error(`Failed to get song details: ${error.message}`);
     }
-
-    const song = data.response.song;
-    return {
-      id: song.id,
-      title: song.title,
-      title_with_featured: song.title_with_featured,
-      artist: song.primary_artist.name,
-      artist_id: song.primary_artist.id,
-      url: song.url,
-      path: song.path,
-      lyrics_state: song.lyrics_state,
-    };
   }
 
   async getArtistDetails(artistId: number): Promise<any> {
-    const data = await this.makeRequest(`/artists/${artistId}`);
-    
-    if (!data.response?.artist) {
-      throw new Error('Artist not found');
+    try {
+      const artist = await this.client.artists.get(artistId);
+      return {
+        id: artist.id,
+        name: artist.name,
+        url: artist.url,
+        image_url: artist.image,
+        header_image_url: artist.image,
+        description: '', // Description doesn't exist on Artist type
+      };
+    } catch (error: any) {
+      throw new Error(`Failed to get artist details: ${error.message}`);
     }
-
-    const artist = data.response.artist;
-    return {
-      id: artist.id,
-      name: artist.name,
-      url: artist.url,
-      image_url: artist.image_url,
-      header_image_url: artist.header_image_url,
-      description: artist.description_annotation?.annotation?.body?.plain || '',
-    };
   }
 
   async getArtistSongs(artistId: number, limit: number = 20): Promise<any[]> {
-    const data = await this.makeRequest(`/artists/${artistId}/songs?per_page=${limit}&sort=popularity`);
-    
-    if (!data.response?.songs) {
+    try {
+      const artist = await this.client.artists.get(artistId);
+      const songs = await artist.songs();
+      return songs.slice(0, limit).map(song => ({
+        id: song.id,
+        title: song.title,
+        title_with_featured: song.title,
+        url: song.url,
+        path: song.url, // Using url as path since path doesn't exist
+        release_date: song.releasedAt, // Using releasedAt instead of releaseDate
+        primary_artist: song.artist.name,
+      }));
+    } catch (error: any) {
+      console.error('Genius artist songs error:', error);
       return [];
     }
-
-    return data.response.songs.map((song: any) => ({
-      id: song.id,
-      title: song.title,
-      title_with_featured: song.title_with_featured,
-      url: song.url,
-      path: song.path,
-      release_date: song.release_date,
-      primary_artist: song.primary_artist.name,
-    }));
   }
 
-  // Note: Genius API doesn't provide lyrics directly through their API
-  // This would require scraping the lyrics page, which is against their terms of service
-  // For production use, you would need to use a different lyrics API or service
+  async getLyrics(songId: number): Promise<string> {
+    try {
+      const song = await this.client.songs.get(songId);
+      const lyrics = await song.lyrics();
+      return lyrics;
+    } catch (error: any) {
+      throw new Error(`Failed to get lyrics: ${error.message}`);
+    }
+  }
+
   async getLyricsUrl(songPath: string): Promise<string> {
-    // Return the Genius URL where lyrics can be found
     return `https://genius.com${songPath}`;
   }
 
@@ -174,17 +178,23 @@ class GeniusClient {
   }
 
   async getPopularSongsByArtist(artistName: string, limit: number = 10): Promise<any[]> {
-    // First search for the artist
-    const artistSearch = await this.searchSongs(artistName, 5);
-    
-    if (artistSearch.length === 0) {
+    try {
+      const searches = await this.client.songs.search(artistName);
+      const artistSongs = searches.filter(song => 
+        song.artist.name.toLowerCase().includes(artistName.toLowerCase())
+      );
+      return artistSongs.slice(0, limit).map(song => ({
+        id: song.id,
+        title: song.title,
+        artist: song.artist.name,
+        url: song.url,
+        thumbnail: song.thumbnail,
+      }));
+    } catch (error: any) {
+      console.error('Genius popular songs error:', error);
       return [];
     }
-
-    // Get the first artist's songs
-    const artistId = artistSearch[0].artist_id;
-    return this.getArtistSongs(artistId, limit);
   }
 }
 
-export const geniusClient = new GeniusClient(); 
+export const geniusClient = new GeniusClient();

@@ -1,7 +1,8 @@
 import { Request, Response } from 'express';
+import axios from 'axios';
+import db from '../db/knex';
 import { getSpotifyAuthUrl } from '../config/auth';
 import { spotifyClient } from '../utils/spotifyClient';
-import db from '../db/knex';
 import crypto from 'crypto';
 
 const authController = {

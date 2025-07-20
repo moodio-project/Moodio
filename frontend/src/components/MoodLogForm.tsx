@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
-import { api } from '../adapters/api';
+import { api, aiAPI } from '../adapters/api';
 import { cn } from '../lib/utils';
-import Button from './ui/button';
+import { Button } from './ui/button';
 
 const MOODS = [
   { label: '😊 Happy', value: 'happy' },
@@ -14,44 +14,86 @@ const MOODS = [
   { label: '🤩 Excited', value: 'excited' },
 ];
 
-const MoodLogForm: React.FC<{ lastSongId?: string; lastMood?: string }> = ({ lastSongId, lastMood }) => {
-  const [mood, setMood] = useState(lastMood || '');
+const MoodLogForm: React.FC<{ lastSongId?: string }> = ({ lastSongId }) => {
+  const [mood, setMood] = useState('');
   const [intensity, setIntensity] = useState(5);
   const [note, setNote] = useState('');
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const [success, setSuccess] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isAnalyzing, setIsAnalyzing] = useState(false);
+  const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setError(null);
-    setSuccess(false);
-    if (!mood || !intensity) {
-      setError('Please select a mood and intensity.');
+    
+    if (!mood || intensity < 1 || intensity > 10) {
+      setMessage({ type: 'error', text: 'Please select a mood and set intensity (1-10)' });
       return;
     }
-    setLoading(true);
-    const payload = {
-      mood,
-      mood_intensity: intensity,
-      note,
-      song_id: lastSongId,
-    };
+
+    setIsSubmitting(true);
+    setMessage(null);
+
     try {
-      await api.post('/moods', payload, { withCredentials: true });
-      setSuccess(true);
+      const payload = {
+        mood,
+        mood_intensity: intensity,
+        note,
+        song_id: lastSongId,
+      };
+
+      await api.post('/moods', payload);
+      
+      setMessage({ type: 'success', text: 'Mood logged successfully!' });
       setMood('');
       setIntensity(5);
       setNote('');
-    } catch (err) {
-      setError('Failed to log mood. Data will be stored locally.');
-      // Store locally as fallback
-      const localLogs = JSON.parse(localStorage.getItem('moodLogs') || '[]');
-      localLogs.push({ ...payload, created_at: new Date().toISOString() });
-      localStorage.setItem('moodLogs', JSON.stringify(localLogs));
-      setSuccess(true);
+    } catch (error: any) {
+      console.error('Failed to log mood:', error);
+      
+      // Fallback: store in localStorage if backend fails
+      const moodLogs = JSON.parse(localStorage.getItem('moodLogs') || '[]');
+      moodLogs.push({
+        id: Date.now(),
+        mood,
+        mood_intensity: intensity,
+        note,
+        song_id: lastSongId,
+        created_at: new Date().toISOString(),
+      });
+      localStorage.setItem('moodLogs', JSON.stringify(moodLogs));
+      
+      setMessage({ type: 'success', text: 'Mood logged locally (backend unavailable)' });
+      setMood('');
+      setIntensity(5);
+      setNote('');
     } finally {
-      setLoading(false);
+      setIsSubmitting(false);
+    }
+  };
+
+  const handleAIAnalysis = async () => {
+    if (!note.trim()) {
+      setMessage({ type: 'error', text: 'Please add a note to analyze your mood' });
+      return;
+    }
+
+    setIsAnalyzing(true);
+    setMessage(null);
+
+    try {
+      const response = await aiAPI.analyzeMood(note, intensity);
+      const analysis = response.data.analysis;
+      
+      setMood(analysis.mood);
+      setMessage({ 
+        type: 'success', 
+        text: `AI analyzed your mood as: ${analysis.mood} (${Math.round(analysis.confidence * 100)}% confidence)` 
+      });
+    } catch (error: any) {
+      console.error('AI analysis failed:', error);
+      setMessage({ type: 'error', text: 'AI analysis failed. Please select mood manually.' });
+    } finally {
+      setIsAnalyzing(false);
     }
   };
 
@@ -128,19 +170,31 @@ const MoodLogForm: React.FC<{ lastSongId?: string; lastMood?: string }> = ({ las
         type="submit"
         className={cn(
           'w-full bg-[#1DB954] text-white font-semibold py-2 rounded-md transition hover:bg-[#1ed760] focus:ring-2 focus:ring-[#1DB954] focus:outline-none',
-          loading && 'opacity-60 cursor-not-allowed'
+          isSubmitting && 'opacity-60 cursor-not-allowed'
         )}
-        disabled={loading}
-        aria-busy={loading}
+        disabled={isSubmitting}
+        aria-busy={isSubmitting}
       >
-        {loading ? 'Logging...' : 'Log Mood'}
+        {isSubmitting ? 'Logging...' : 'Log Mood'}
       </Button>
 
-      {error && (
-        <div className="text-red-400 text-sm mt-2" role="alert">{error}</div>
-      )}
-      {success && (
-        <div className="text-green-400 text-sm mt-2" role="status">Mood logged successfully!</div>
+      <Button
+        type="button"
+        onClick={handleAIAnalysis}
+        className={cn(
+          'w-full bg-[#1DB954] text-white font-semibold py-2 rounded-md transition hover:bg-[#1ed760] focus:ring-2 focus:ring-[#1DB954] focus:outline-none',
+          isAnalyzing && 'opacity-60 cursor-not-allowed'
+        )}
+        disabled={isAnalyzing}
+        aria-busy={isAnalyzing}
+      >
+        {isAnalyzing ? 'Analyzing...' : 'Analyze Mood with AI'}
+      </Button>
+
+      {message && (
+        <div className={`text-sm mt-2 ${message.type === 'success' ? 'text-green-400' : 'text-red-400'}`} role="status">
+          {message.text}
+        </div>
       )}
     </form>
   );

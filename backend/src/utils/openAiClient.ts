@@ -1,7 +1,4 @@
 import axios from 'axios';
-import dotenv from 'dotenv';
-
-dotenv.config();
 
 interface OpenAIResponse {
   choices: Array<{
@@ -31,6 +28,7 @@ class OpenAIClient {
   constructor() {
     this.apiKey = process.env.OPENAI_API_KEY || '';
     if (!this.apiKey) {
+      console.error('Available env vars:', Object.keys(process.env).filter(key => key.includes('OPENAI')));
       throw new Error('OpenAI API key not found in environment variables');
     }
   }
@@ -187,4 +185,4 @@ class OpenAIClient {
   }
 }
 
-export const openAiClient = new OpenAIClient(); 
+export const openAiClient = new OpenAIClient();
