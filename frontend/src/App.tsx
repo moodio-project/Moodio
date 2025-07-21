@@ -1,8 +1,6 @@
 import React from 'react';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
-import Navbar from './components/Navbar';
-import ProtectedRoute from './components/ProtectedRoute';
-import Home from './pages/Home';
+import SpotifyLayout from './components/spotify/SpotifyLayout';
 import Dashboard from './pages/Dashboard';
 import LoginPage from './pages/LoginPage';
 import SignupPage from './pages/SignupPage';
@@ -18,9 +16,9 @@ const AppLayout: React.FC = () => {
 
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-[#191414] to-[#1DB954]/10 flex items-center justify-center">
+      <div className="min-h-screen bg-spotify-dark-gray flex items-center justify-center">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#1DB954] mx-auto mb-4"></div>
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-spotify-green mx-auto mb-4"></div>
           <p className="text-white">Loading...</p>
         </div>
       </div>
@@ -32,18 +30,15 @@ const AppLayout: React.FC = () => {
   }
 
   return (
-    <div className="flex min-h-screen bg-gradient-to-br from-[#191414] to-[#1DB954]/10">
-      <Navbar />
-      <main className="flex-1">
-        <Routes>
-          <Route path="/dashboard" element={<Dashboard />} />
-          <Route path="/log-mood" element={<MoodLogForm />} />
-          <Route path="/explore" element={<Explore />} />
-          <Route path="/profile" element={<Profile />} />
-          <Route path="*" element={<Navigate to="/dashboard" replace />} />
-        </Routes>
-      </main>
-    </div>
+    <SpotifyLayout>
+      <Routes>
+        <Route path="/dashboard" element={<Dashboard />} />
+        <Route path="/log-mood" element={<MoodLogForm />} />
+        <Route path="/explore" element={<Explore />} />
+        <Route path="/profile" element={<Profile />} />
+        <Route path="*" element={<Navigate to="/dashboard" replace />} />
+      </Routes>
+    </SpotifyLayout>
   );
 };
 
@@ -55,6 +50,7 @@ const App: React.FC = () => {
           {/* Public routes */}
           <Route path="/login" element={<LoginPage />} />
           <Route path="/signup" element={<SignupPage />} />
+          <Route path="/register" element={<SignupPage />} />
           <Route path="/spotify/callback" element={<SpotifyCallback />} />
           
           {/* Protected routes */}
