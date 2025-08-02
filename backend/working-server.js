@@ -1,23 +1,33 @@
 require('dotenv').config();
 const express = require('express');
 const cors = require('cors');
+const crypto = require('crypto');
 
 const app = express();
 
 // Middleware
 app.use(cors({
-  origin: ['http://localhost:5173', 'http://localhost:5174'],
+  origin: ['http://localhost:5173', 'http://localhost:5174', 'http://localhost:5175'],
   credentials: true
 }));
 app.use(express.json());
 
-// Mock user database
+// Password hashing function
+const hashPassword = (password) => {
+  return crypto.createHash('sha256').update(password).digest('hex');
+};
+
+// Mock user database with hashed passwords
 const users = [
   {
     id: 1,
     username: 'demo',
     email: 'demo@example.com',
-    password: 'password123'
+    password: hashPassword('password123'),
+    spotify_id: null,
+    display_name: 'Demo User',
+    avatar_url: null,
+    created_at: new Date().toISOString()
   }
 ];
 
@@ -49,17 +59,24 @@ app.get('/api/ai/test-env', (req, res) => {
 app.post('/api/auth/login', (req, res) => {
   const { email, password } = req.body;
   
-  const user = users.find(u => u.email === email && u.password === password);
+  const hashedPassword = hashPassword(password);
+  const user = users.find(u => u.email === email && u.password === hashedPassword);
   
   if (!user) {
-    return res.status(401).json({ error: 'Invalid credentials' });
+    return res.status(401).json({ error: 'Invalid email or password' });
   }
 
   const token = `token_${Date.now()}_${user.id}`;
   sessions.set(token, { userId: user.id, user });
 
   res.json({
-    user: { id: user.id, username: user.username, email: user.email },
+    user: { 
+      id: user.id, 
+      username: user.username, 
+      email: user.email,
+      display_name: user.display_name,
+      avatar_url: user.avatar_url
+    },
     token
   });
 });
@@ -69,14 +86,22 @@ app.post('/api/auth/signup', (req, res) => {
   
   // Check if user already exists
   if (users.find(u => u.email === email)) {
-    return res.status(400).json({ error: 'User already exists' });
+    return res.status(400).json({ error: 'User with this email already exists' });
+  }
+
+  if (users.find(u => u.username === username)) {
+    return res.status(400).json({ error: 'Username already taken' });
   }
 
   const newUser = {
     id: users.length + 1,
     username,
     email,
-    password
+    password: hashPassword(password),
+    spotify_id: null,
+    display_name: username,
+    avatar_url: null,
+    created_at: new Date().toISOString()
   };
 
   users.push(newUser);
@@ -85,7 +110,13 @@ app.post('/api/auth/signup', (req, res) => {
   sessions.set(token, { userId: newUser.id, user: newUser });
 
   res.json({
-    user: { id: newUser.id, username: newUser.username, email: newUser.email },
+    user: { 
+      id: newUser.id, 
+      username: newUser.username, 
+      email: newUser.email,
+      display_name: newUser.display_name,
+      avatar_url: newUser.avatar_url
+    },
     token
   });
 });
@@ -112,11 +143,12 @@ app.get('/api/auth/me', (req, res) => {
   });
 });
 
-// Spotify OAuth routes
+// Spotify OAuth routes - FIXED REDIRECT URI
 app.get('/api/auth/spotify', (req, res) => {
   const spotifyClientId = process.env.SPOTIFY_CLIENT_ID;
+  // Fixed redirect URI to match Spotify app settings
   const redirectUri = 'http://localhost:3001/api/auth/spotify/callback';
-  const scope = 'user-read-private user-read-email user-read-playback-state';
+  const scope = 'user-read-private user-read-email user-read-playback-state user-top-read user-read-recently-played playlist-read-private';
   
   const authUrl = `https://accounts.spotify.com/authorize?client_id=${spotifyClientId}&response_type=code&redirect_uri=${encodeURIComponent(redirectUri)}&scope=${encodeURIComponent(scope)}`;
   
@@ -136,37 +168,124 @@ app.get('/api/auth/spotify/callback', (req, res) => {
     id: 'spotify_user_123',
     username: 'spotify_user',
     email: 'spotify@example.com',
-    spotify_id: 'spotify_user_123'
+    spotify_id: 'spotify_user_123',
+    display_name: 'Spotify User',
+    avatar_url: 'https://via.placeholder.com/150',
+    created_at: new Date().toISOString()
   };
 
-  const token = `spotify_token_${Date.now()}_${mockSpotifyUser.id}`;
-  sessions.set(token, { userId: mockSpotifyUser.id, user: mockSpotifyUser });
+  // Check if user already exists
+  let existingUser = users.find(u => u.spotify_id === mockSpotifyUser.spotify_id);
+  
+  if (!existingUser) {
+    // Create new user
+    existingUser = {
+      id: users.length + 1,
+      username: mockSpotifyUser.username,
+      email: mockSpotifyUser.email,
+      password: null, // Spotify users don't have passwords
+      spotify_id: mockSpotifyUser.spotify_id,
+      display_name: mockSpotifyUser.display_name,
+      avatar_url: mockSpotifyUser.avatar_url,
+      created_at: new Date().toISOString()
+    };
+    users.push(existingUser);
+  }
 
-  // Redirect to frontend with token
-  res.redirect(`http://localhost:5173/spotify/callback?token=${token}`);
+  const token = `spotify_token_${Date.now()}_${existingUser.id}`;
+  sessions.set(token, { userId: existingUser.id, user: existingUser });
+
+  // Redirect to frontend with token - support multiple ports
+  const frontendUrl = req.headers.origin || 'http://localhost:5173';
+  res.redirect(`${frontendUrl}/spotify/callback?token=${token}`);
 });
 
 // Mock AI endpoints for testing
 app.post('/api/ai/analyze-mood', (req, res) => {
+  const { mood, note, song_id } = req.body;
+  
+  // Use the user's actual mood input instead of ignoring it
+  const userMood = mood || 'neutral';
+  const userNote = note || '';
+  
+  // Create a more realistic analysis based on user input
+  let analysis = {
+    mood: userMood,
+    confidence: 0.9,
+    reasoning: `Based on your input, you're feeling ${userMood}.`
+  };
+
+  // Add more detailed reasoning if user provided a note
+  if (userNote) {
+    analysis.reasoning += ` Your note "${userNote}" provides additional context about your emotional state.`;
+  }
+
+  // Adjust confidence based on input quality
+  if (userNote && userNote.length > 10) {
+    analysis.confidence = 0.95;
+  } else if (userNote && userNote.length > 5) {
+    analysis.confidence = 0.85;
+  } else {
+    analysis.confidence = 0.75;
+  }
+
   res.json({
-    analysis: {
-      mood: 'happy',
-      confidence: 0.85,
-      reasoning: 'The user seems to be in a positive mood based on their description.'
-    }
+    analysis,
+    song_recommendations: [
+      { title: 'Mood Music 1', artist: 'Artist 1', reason: 'Matches your current mood' },
+      { title: 'Mood Music 2', artist: 'Artist 2', reason: 'Helps enhance your feeling' }
+    ]
   });
 });
 
 app.get('/api/ai/song-recommendations', (req, res) => {
   const { mood = 'happy', limit = 5 } = req.query;
-  res.json({
-    recommendations: [
+  
+  // Create mood-specific recommendations
+  const moodRecommendations = {
+    happy: [
       { title: 'Happy', artist: 'Pharrell Williams', reason: 'Perfect for a happy mood', mood_match: mood },
       { title: 'Good Vibrations', artist: 'The Beach Boys', reason: 'Uplifting and positive', mood_match: mood },
       { title: 'Walking on Sunshine', artist: 'Katrina & The Waves', reason: 'Energetic and joyful', mood_match: mood },
       { title: 'Don\'t Stop Believin\'', artist: 'Journey', reason: 'Inspiring and motivational', mood_match: mood },
       { title: 'I Gotta Feeling', artist: 'The Black Eyed Peas', reason: 'Celebratory and upbeat', mood_match: mood }
+    ],
+    sad: [
+      { title: 'Mad World', artist: 'Gary Jules', reason: 'Melancholic and reflective', mood_match: mood },
+      { title: 'Hallelujah', artist: 'Jeff Buckley', reason: 'Emotional and cathartic', mood_match: mood },
+      { title: 'Fix You', artist: 'Coldplay', reason: 'Comforting and healing', mood_match: mood },
+      { title: 'The Scientist', artist: 'Coldplay', reason: 'Thoughtful and introspective', mood_match: mood },
+      { title: 'Skinny Love', artist: 'Bon Iver', reason: 'Raw and emotional', mood_match: mood }
+    ],
+    calm: [
+      { title: 'Weightless', artist: 'Marconi Union', reason: 'Scientifically proven to reduce anxiety', mood_match: mood },
+      { title: 'Claire de Lune', artist: 'Debussy', reason: 'Peaceful and serene', mood_match: mood },
+      { title: 'River Flows in You', artist: 'Yiruma', reason: 'Gentle and flowing', mood_match: mood },
+      { title: 'Comptine d\'un autre été', artist: 'Yann Tiersen', reason: 'Delicate and calming', mood_match: mood },
+      { title: 'Gymnopédie No.1', artist: 'Erik Satie', reason: 'Minimalist and peaceful', mood_match: mood }
+    ],
+    excited: [
+      { title: 'Eye of the Tiger', artist: 'Survivor', reason: 'Motivational and powerful', mood_match: mood },
+      { title: 'We Will Rock You', artist: 'Queen', reason: 'Anthemic and energizing', mood_match: mood },
+      { title: 'Thunderstruck', artist: 'AC/DC', reason: 'High energy and electrifying', mood_match: mood },
+      { title: 'Back in Black', artist: 'AC/DC', reason: 'Rock anthem for excitement', mood_match: mood },
+      { title: 'We Are the Champions', artist: 'Queen', reason: 'Victorious and triumphant', mood_match: mood }
+    ],
+    angry: [
+      { title: 'Break Stuff', artist: 'Limp Bizkit', reason: 'Cathartic release of anger', mood_match: mood },
+      { title: 'Killing in the Name', artist: 'Rage Against the Machine', reason: 'Powerful and rebellious', mood_match: mood },
+      { title: 'Given Up', artist: 'Linkin Park', reason: 'Intense and emotional', mood_match: mood },
+      { title: 'Bodies', artist: 'Drowning Pool', reason: 'Aggressive and energetic', mood_match: mood },
+      { title: 'Chop Suey!', artist: 'System of a Down', reason: 'Dynamic and intense', mood_match: mood }
     ]
+  };
+
+  const recommendations = moodRecommendations[mood.toLowerCase()] || moodRecommendations.happy;
+  
+  res.json({
+    recommendations: recommendations.slice(0, parseInt(limit)),
+    mood_analyzed: mood,
+    total_recommendations: recommendations.length
   });
 });
 

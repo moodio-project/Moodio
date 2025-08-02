@@ -1,10 +1,7 @@
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
-import AuthLayout from '../components/auth/AuthLayout';
-import FormInput from '../components/auth/FormInput';
-import SpotifyButton from '../components/auth/SpotifyButton';
-import { Button } from '../components/ui/button';
+import SpotifyButton, { SpotifyOAuthButton } from '../components/spotify/SpotifyButton';
 import { FaArrowRight } from 'react-icons/fa';
 
 const SignupPage: React.FC = () => {
@@ -23,7 +20,6 @@ const SignupPage: React.FC = () => {
 
   const handleInputChange = (field: string, value: string) => {
     setFormData(prev => ({ ...prev, [field]: value }));
-    // Clear error when user starts typing
     if (errors[field]) {
       setErrors(prev => ({ ...prev, [field]: '' }));
     }
@@ -102,176 +98,247 @@ const SignupPage: React.FC = () => {
   const passwordStrength = getPasswordStrength(formData.password);
 
   return (
-    <AuthLayout 
-      title="Join Moodio" 
-      subtitle="Create your account to start tracking your musical journey"
-    >
-      <form onSubmit={handleSubmit} className="space-y-6">
-        {/* Username Input */}
-        <FormInput
-          type="text"
-          label="Username"
-          value={formData.username}
-          onChange={(value) => handleInputChange('username', value)}
-          error={errors.username}
-          placeholder="Choose a username"
-          required
-          autoComplete="username"
-        />
+    <div className="min-h-screen bg-spotify-black flex items-center justify-center p-4">
+      {/* Background Pattern */}
+      <div className="absolute inset-0 overflow-hidden">
+        <div className="absolute inset-0 bg-gradient-to-br from-spotify-green/5 via-transparent to-spotify-green/5" />
+        <div className="absolute top-0 left-0 w-full h-full">
+          <div className="absolute top-20 left-20 w-32 h-32 bg-spotify-green/10 rounded-full blur-3xl" />
+          <div className="absolute bottom-20 right-20 w-40 h-40 bg-spotify-green/10 rounded-full blur-3xl" />
+        </div>
+      </div>
 
-        {/* Email Input */}
-        <FormInput
-          type="email"
-          label="Email Address"
-          value={formData.email}
-          onChange={(value) => handleInputChange('email', value)}
-          error={errors.email}
-          placeholder="Enter your email"
-          required
-          autoComplete="email"
-        />
-
-        {/* Password Input */}
-        <div className="space-y-2">
-          <FormInput
-            type="password"
-            label="Password"
-            value={formData.password}
-            onChange={(value) => handleInputChange('password', value)}
-            error={errors.password}
-            placeholder="Create a password"
-            required
-            autoComplete="new-password"
-          />
-          
-          {/* Password Strength Indicator */}
-          {formData.password && (
-            <div className="space-y-2">
-              <div className="flex gap-1">
-                {[1, 2, 3, 4].map((level) => (
-                  <div
-                    key={level}
-                    className={`h-1 flex-1 rounded-full transition-all duration-300 ${
-                      level <= passwordStrength.score 
-                        ? `bg-[${passwordStrength.color}]` 
-                        : 'bg-[#404040]'
-                    }`}
-                  />
-                ))}
+      {/* Main Content */}
+      <div className="relative z-10 w-full max-w-md">
+        {/* Logo */}
+        <div className="text-center mb-8">
+          <Link to="/" className="inline-block">
+            <div className="flex items-center justify-center gap-3 mb-4">
+              <div className="w-12 h-12 bg-spotify-green rounded-sm flex items-center justify-center">
+                <span className="text-2xl font-bold text-black">M</span>
               </div>
-              <p className="text-xs text-[#B3B3B3]">
-                Password strength: <span style={{ color: passwordStrength.color }}>{passwordStrength.label}</span>
+              <h1 className="spotify-text-heading-large text-white">Moodio</h1>
+            </div>
+          </Link>
+          <p className="spotify-text-body-large spotify-text-gray">
+            Your Music, Your Mood, Your Story
+          </p>
+        </div>
+
+        {/* Signup Card */}
+        <div className="bg-spotify-medium-gray rounded-lg p-8 shadow-lg border border-spotify-border-gray">
+          <div className="text-center mb-8">
+            <h2 className="spotify-text-heading-medium text-white mb-2">Join Moodio</h2>
+            <p className="spotify-text-body-medium spotify-text-gray">
+              Create your account to start tracking your musical journey
+            </p>
+          </div>
+
+          <form onSubmit={handleSubmit} className="space-y-6">
+            {/* Username Input */}
+            <div>
+              <label className="block spotify-text-body-medium text-white mb-2">
+                Username
+              </label>
+              <input
+                type="text"
+                value={formData.username}
+                onChange={(e) => handleInputChange('username', e.target.value)}
+                className="spotify-input w-full"
+                placeholder="Choose a username"
+                required
+              />
+              {errors.username && (
+                <p className="mt-1 spotify-text-body-small text-moodio-pink">
+                  {errors.username}
+                </p>
+              )}
+            </div>
+
+            {/* Email Input */}
+            <div>
+              <label className="block spotify-text-body-medium text-white mb-2">
+                Email address
+              </label>
+              <input
+                type="email"
+                value={formData.email}
+                onChange={(e) => handleInputChange('email', e.target.value)}
+                className="spotify-input w-full"
+                placeholder="Enter your email"
+                required
+              />
+              {errors.email && (
+                <p className="mt-1 spotify-text-body-small text-moodio-pink">
+                  {errors.email}
+                </p>
+              )}
+            </div>
+
+            {/* Password Input */}
+            <div>
+              <label className="block spotify-text-body-medium text-white mb-2">
+                Password
+              </label>
+              <input
+                type="password"
+                value={formData.password}
+                onChange={(e) => handleInputChange('password', e.target.value)}
+                className="spotify-input w-full"
+                placeholder="Create a password"
+                required
+              />
+              {errors.password && (
+                <p className="mt-1 spotify-text-body-small text-moodio-pink">
+                  {errors.password}
+                </p>
+              )}
+              
+              {/* Password Strength Indicator */}
+              {formData.password && (
+                <div className="mt-2 space-y-2">
+                  <div className="flex gap-1">
+                    {[1, 2, 3, 4].map((level) => (
+                      <div
+                        key={level}
+                        className={`h-1 flex-1 rounded-full transition-all duration-300 ${
+                          level <= passwordStrength.score 
+                            ? `bg-[${passwordStrength.color}]` 
+                            : 'bg-spotify-border-gray'
+                        }`}
+                      />
+                    ))}
+                  </div>
+                  <p className="spotify-text-body-small spotify-text-gray">
+                    Password strength: <span style={{ color: passwordStrength.color }}>{passwordStrength.label}</span>
+                  </p>
+                </div>
+              )}
+            </div>
+
+            {/* Confirm Password Input */}
+            <div>
+              <label className="block spotify-text-body-medium text-white mb-2">
+                Confirm Password
+              </label>
+              <input
+                type="password"
+                value={formData.confirmPassword}
+                onChange={(e) => handleInputChange('confirmPassword', e.target.value)}
+                className="spotify-input w-full"
+                placeholder="Confirm your password"
+                required
+              />
+              {errors.confirmPassword && (
+                <p className="mt-1 spotify-text-body-small text-moodio-pink">
+                  {errors.confirmPassword}
+                </p>
+              )}
+            </div>
+
+            {/* Terms of Service */}
+            <div className="space-y-2">
+              <label className="flex items-start gap-3 cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={acceptedTerms}
+                  onChange={(e) => setAcceptedTerms(e.target.checked)}
+                  className="mt-1 w-4 h-4 text-spotify-green bg-spotify-medium-gray border-spotify-border-gray rounded focus:ring-spotify-green focus:ring-2"
+                />
+                <span className="spotify-text-body-small spotify-text-gray leading-relaxed">
+                  I agree to the{' '}
+                  <Link to="/terms" className="text-spotify-green hover:text-spotify-green-hover">
+                    Terms of Service
+                  </Link>{' '}
+                  and{' '}
+                  <Link to="/privacy" className="text-spotify-green hover:text-spotify-green-hover">
+                    Privacy Policy
+                  </Link>
+                </span>
+              </label>
+              {errors.terms && (
+                <p className="spotify-text-body-small text-moodio-pink flex items-center gap-2">
+                  <div className="w-1.5 h-1.5 bg-moodio-pink rounded-full" />
+                  {errors.terms}
+                </p>
+              )}
+            </div>
+
+            {/* General Error */}
+            {errors.general && (
+              <div className="bg-moodio-pink/10 border border-moodio-pink/20 rounded-md p-4">
+                <p className="spotify-text-body-small text-moodio-pink">
+                  {errors.general}
+                </p>
+              </div>
+            )}
+
+            {/* Create Account Button */}
+            <SpotifyButton
+              type="submit"
+              variant="primary"
+              disabled={isLoading}
+              className="w-full"
+            >
+              {isLoading ? (
+                <div className="flex items-center gap-3">
+                  <div className="animate-spin rounded-full h-4 w-4 border-2 border-current border-t-transparent" />
+                  <span>Creating Account...</span>
+                </div>
+              ) : (
+                <div className="flex items-center gap-3">
+                  <span>Create Account</span>
+                  <FaArrowRight className="text-sm" />
+                </div>
+              )}
+            </SpotifyButton>
+
+            {/* Divider */}
+            <div className="relative my-8">
+              <div className="absolute inset-0 flex items-center">
+                <div className="w-full border-t border-spotify-border-gray" />
+              </div>
+              <div className="relative flex justify-center text-sm">
+                <span className="px-4 bg-spotify-medium-gray spotify-text-gray">or</span>
+              </div>
+            </div>
+
+            {/* Spotify Signup */}
+            <div className="space-y-4">
+              <SpotifyOAuthButton
+                onClick={handleSpotifySignup}
+                loading={isSpotifyLoading}
+                text="Sign up with Spotify"
+              />
+              
+              <p className="text-center spotify-text-body-small spotify-text-gray">
+                Connect your Spotify account to unlock personalized mood insights
               </p>
             </div>
-          )}
+
+            {/* Login Link */}
+            <div className="text-center pt-6 border-t border-spotify-border-gray">
+              <p className="spotify-text-body-medium spotify-text-gray">
+                Already have an account?{' '}
+                <Link 
+                  to="/login" 
+                  className="text-white hover:text-spotify-green font-semibold transition-colors"
+                >
+                  Sign in
+                </Link>
+              </p>
+            </div>
+          </form>
         </div>
 
-        {/* Confirm Password Input */}
-        <FormInput
-          type="password"
-          label="Confirm Password"
-          value={formData.confirmPassword}
-          onChange={(value) => handleInputChange('confirmPassword', value)}
-          error={errors.confirmPassword}
-          placeholder="Confirm your password"
-          required
-          autoComplete="new-password"
-        />
-
-        {/* Terms of Service */}
-        <div className="space-y-2">
-          <label className="flex items-start gap-3 cursor-pointer">
-            <input
-              type="checkbox"
-              checked={acceptedTerms}
-              onChange={(e) => setAcceptedTerms(e.target.checked)}
-              className="mt-1 w-4 h-4 text-[#22C55E] bg-[#2A2A2A] border-[#404040] rounded focus:ring-[#A78BFA] focus:ring-2"
-            />
-            <span className="text-sm text-[#B3B3B3] leading-relaxed">
-              I agree to the{' '}
-              <Link to="/terms" className="text-[#A78BFA] hover:text-[#C4B5FD]">
-                Terms of Service
-              </Link>{' '}
-              and{' '}
-              <Link to="/privacy" className="text-[#A78BFA] hover:text-[#C4B5FD]">
-                Privacy Policy
-              </Link>
-            </span>
-          </label>
-          {errors.terms && (
-            <p className="text-sm text-[#F472B6] flex items-center gap-2">
-              <div className="w-1.5 h-1.5 bg-[#F472B6] rounded-full" />
-              {errors.terms}
-            </p>
-          )}
-        </div>
-
-        {/* General Error */}
-        {errors.general && (
-          <div className="bg-[#F472B6]/10 border border-[#F472B6]/20 rounded-lg p-4">
-            <div className="flex items-center gap-3">
-              <div className="w-2 h-2 bg-[#F472B6] rounded-full" />
-              <span className="text-sm text-[#F472B6]">{errors.general}</span>
-            </div>
-          </div>
-        )}
-
-        {/* Create Account Button */}
-        <Button
-          type="submit"
-          disabled={isLoading}
-          className="w-full bg-[#22C55E] hover:bg-[#16A34A] text-white font-semibold py-4 text-lg rounded-lg transition-all duration-200 transform hover:scale-[1.02] active:scale-[0.98] shadow-lg hover:shadow-xl disabled:opacity-50 disabled:cursor-not-allowed"
-        >
-          {isLoading ? (
-            <div className="flex items-center gap-3">
-              <div className="animate-spin rounded-full h-5 w-5 border-2 border-white border-t-transparent" />
-              <span>Creating Account...</span>
-            </div>
-          ) : (
-            <div className="flex items-center gap-3">
-              <span>Create Account</span>
-              <FaArrowRight className="text-sm" />
-            </div>
-          )}
-        </Button>
-
-        {/* Divider */}
-        <div className="relative my-8">
-          <div className="absolute inset-0 flex items-center">
-            <div className="w-full border-t border-[#404040]" />
-          </div>
-          <div className="relative flex justify-center text-sm">
-            <span className="px-4 bg-[#1E1E1E] text-[#B3B3B3]">or</span>
-          </div>
-        </div>
-
-        {/* Spotify Signup */}
-        <div className="space-y-4">
-          <SpotifyButton
-            onClick={handleSpotifySignup}
-            isLoading={isSpotifyLoading}
-            text="Sign up with Spotify"
-          />
-          
-          <p className="text-center text-xs text-[#B3B3B3]">
-            Connect your Spotify account to unlock personalized mood insights
+        {/* Footer */}
+        <div className="text-center mt-8">
+          <p className="spotify-text-body-small spotify-text-gray">
+            Track your emotions through music and discover how your listening habits shape your well-being
           </p>
         </div>
-
-        {/* Login Link */}
-        <div className="text-center pt-6 border-t border-[#2A2A2A]">
-          <p className="text-[#B3B3B3] text-sm">
-            Already have an account?{' '}
-            <Link 
-              to="/login" 
-              className="text-[#A78BFA] hover:text-[#C4B5FD] font-semibold transition-colors"
-            >
-              Sign in
-            </Link>
-          </p>
-        </div>
-      </form>
-    </AuthLayout>
+      </div>
+    </div>
   );
 };
 

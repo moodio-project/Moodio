@@ -7,7 +7,8 @@ import {
   FaPlus, 
   FaHeart,
   FaUser,
-  FaCog
+  FaCog,
+  FaHistory
 } from 'react-icons/fa';
 
 const SpotifySidebar: React.FC = () => {
@@ -22,6 +23,11 @@ const SpotifySidebar: React.FC = () => {
   const libraryItems = [
     { path: '/playlists', icon: FaPlus, label: 'Create Playlist' },
     { path: '/liked', icon: FaHeart, label: 'Liked Songs' },
+  ];
+
+  const moodItems = [
+    { path: '/log-mood', icon: FaPlus, label: 'Log Mood' },
+    { path: '/mood-history', icon: FaHistory, label: 'Mood History' },
   ];
 
   const isActive = (path: string) => location.pathname === path;
@@ -55,6 +61,26 @@ const SpotifySidebar: React.FC = () => {
         </ul>
       </nav>
 
+      {/* Mood Tracking Section */}
+      <div className="mb-8">
+        <h3 className="spotify-text-body-small spotify-text-gray uppercase tracking-wider mb-4 px-4">
+          Mood Tracking
+        </h3>
+        <ul className="space-y-1">
+          {moodItems.map((item) => (
+            <li key={item.path}>
+              <Link
+                to={item.path}
+                className={`spotify-nav-item ${isActive(item.path) ? 'active' : ''}`}
+              >
+                <item.icon />
+                {item.label}
+              </Link>
+            </li>
+          ))}
+        </ul>
+      </div>
+
       {/* Library Section */}
       <div className="mb-8">
         <h3 className="spotify-text-body-small spotify-text-gray uppercase tracking-wider mb-4 px-4">
@@ -72,33 +98,6 @@ const SpotifySidebar: React.FC = () => {
               </Link>
             </li>
           ))}
-        </ul>
-      </div>
-
-      {/* Mood Tracking Section */}
-      <div className="mb-8">
-        <h3 className="spotify-text-body-small spotify-text-gray uppercase tracking-wider mb-4 px-4">
-          Mood Tracking
-        </h3>
-        <ul className="space-y-1">
-          <li>
-            <Link
-              to="/log-mood"
-              className={`spotify-nav-item ${isActive('/log-mood') ? 'active' : ''}`}
-            >
-              <FaPlus />
-              Log Mood
-            </Link>
-          </li>
-          <li>
-            <Link
-              to="/mood-history"
-              className={`spotify-nav-item ${isActive('/mood-history') ? 'active' : ''}`}
-            >
-              <FaBook />
-              Mood History
-            </Link>
-          </li>
         </ul>
       </div>
 
