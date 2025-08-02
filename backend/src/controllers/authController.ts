@@ -1,24 +1,128 @@
 import { Request, Response } from 'express';
 import axios from 'axios';
+import bcrypt from 'bcryptjs';
+import jwt from 'jsonwebtoken';
 import db from '../db/knex';
 import { getSpotifyAuthUrl } from '../config/auth';
 import { spotifyClient } from '../utils/spotifyClient';
 import crypto from 'crypto';
 
 const authController = {
+  // Email/Password Registration
+  signup: async (req: Request, res: Response): Promise<void> => {
+    try {
+      const { username, email, password } = req.body;
+
+      if (!username || !email || !password) {
+        res.status(400).json({ error: 'Username, email, and password are required' });
+        return;
+      }
+
+      // Check if user already exists
+      const existingUser = await db('users').where({ email }).first();
+      if (existingUser) {
+        res.status(400).json({ error: 'User already exists with this email' });
+        return;
+      }
+
+      // Hash password
+      const hashedPassword = await bcrypt.hash(password, 10);
+
+      // Create user
+      const [newUser] = await db('users').insert({
+        display_name: username,
+        email,
+        password: hashedPassword,
+      }).returning('*');
+
+      // Generate JWT token
+      const token = jwt.sign(
+        { userId: newUser.id, email: newUser.email },
+        process.env.SESSION_SECRET || 'secret',
+        { expiresIn: '7d' }
+      );
+
+      // Store user ID in session
+      if (req.session) {
+        (req.session as any).userId = newUser.id;
+      }
+
+      res.status(201).json({
+        user: {
+          id: newUser.id,
+          display_name: newUser.display_name,
+          email: newUser.email,
+          avatar_url: newUser.avatar_url,
+        },
+        token
+      });
+    } catch (error) {
+      console.error('Signup error:', error);
+      res.status(500).json({ error: 'Failed to create account' });
+    }
+  },
+
+  // Email/Password Login
+  login: async (req: Request, res: Response): Promise<void> => {
+    try {
+      const { email, password } = req.body;
+
+      if (!email || !password) {
+        res.status(400).json({ error: 'Email and password are required' });
+        return;
+      }
+
+      // Find user
+      const user = await db('users').where({ email }).first();
+      if (!user || !user.password) {
+        res.status(401).json({ error: 'Invalid email or password' });
+        return;
+      }
+
+      // Verify password
+      const isValidPassword = await bcrypt.compare(password, user.password);
+      if (!isValidPassword) {
+        res.status(401).json({ error: 'Invalid email or password' });
+        return;
+      }
+
+      // Generate JWT token
+      const token = jwt.sign(
+        { userId: user.id, email: user.email },
+        process.env.SESSION_SECRET || 'secret',
+        { expiresIn: '7d' }
+      );
+
+      // Store user ID in session
+      if (req.session) {
+        (req.session as any).userId = user.id;
+      }
+
+      res.json({
+        user: {
+          id: user.id,
+          display_name: user.display_name,
+          email: user.email,
+          avatar_url: user.avatar_url,
+        },
+        token
+      });
+    } catch (error) {
+      console.error('Login error:', error);
+      res.status(500).json({ error: 'Failed to login' });
+    }
+  },
+
+  // Spotify OAuth (existing code)
   spotifyLogin: (req: Request, res: Response): void => {
     try {
-      // Generate a random state parameter for security
       const state = crypto.randomBytes(16).toString('hex');
       
-      // Store state in session for verification
       if (req.session) {
         (req.session as any).spotifyState = state;
       }
       
-      // Generate Spotify authorization URL
       const authUrl = getSpotifyAuthUrl(state);
-      
       res.json({ authUrl });
     } catch (error) {
       console.error('Spotify login error:', error);
@@ -31,7 +135,6 @@ const authController = {
       const { code, state } = req.query;
       const sessionState = (req.session as any)?.spotifyState;
 
-      // Verify state parameter
       if (!state || !sessionState || state !== sessionState) {
         res.status(400).json({ error: 'Invalid state parameter' });
         return;
@@ -42,24 +145,19 @@ const authController = {
         return;
       }
 
-      // Exchange authorization code for tokens
       const tokenResponse = await spotifyClient.exchangeCodeForTokens(code);
       
-      // Set tokens in the client
       spotifyClient.setTokens(
         tokenResponse.access_token,
         tokenResponse.refresh_token,
         tokenResponse.expires_in
       );
 
-      // Get user profile from Spotify
       const spotifyProfile = await spotifyClient.getUserProfile();
 
-      // Check if user exists in database
       let user = await db('users').where({ spotify_id: spotifyProfile.id }).first();
 
       if (!user) {
-        // Create new user
         const [newUser] = await db('users').insert({
           spotify_id: spotifyProfile.id,
           display_name: spotifyProfile.display_name,
@@ -69,7 +167,6 @@ const authController = {
         
         user = newUser;
       } else {
-        // Update existing user
         await db('users').where({ id: user.id }).update({
           display_name: spotifyProfile.display_name,
           email: spotifyProfile.email,
@@ -77,7 +174,6 @@ const authController = {
         });
       }
 
-      // Store tokens in session
       if (req.session) {
         (req.session as any).spotifyAccessToken = tokenResponse.access_token;
         (req.session as any).spotifyRefreshToken = tokenResponse.refresh_token;
@@ -85,7 +181,6 @@ const authController = {
         delete (req.session as any).spotifyState;
       }
 
-      // Redirect to frontend with success and access token
       const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:5173';
       res.redirect(`${frontendUrl}/dashboard?login=success&token=${tokenResponse.access_token}`);
     } catch (error) {
@@ -111,14 +206,13 @@ const authController = {
         return;
       }
 
-      // Get Spotify profile if we have access token
       let spotifyProfile = null;
       if ((req.session as any)?.spotifyAccessToken) {
         try {
           spotifyClient.setTokens(
             (req.session as any).spotifyAccessToken,
             (req.session as any).spotifyRefreshToken || '',
-            3600 // Default expiry
+            3600
           );
           spotifyProfile = await spotifyClient.getUserProfile();
         } catch (error) {
@@ -157,11 +251,9 @@ const authController = {
     }
   },
 
-  // Legacy methods for email/password auth (if needed)
-  getMe: (req: Request, res: Response): void => {
-    // This is now handled by getProfile
-    res.send('User info');
+  getMe: async (req: Request, res: Response): Promise<void> => {
+    await authController.getProfile(req, res);
   },
 };
 
-export default authController; 
+export default authController;
