@@ -11,7 +11,10 @@ export const spotifyConfig = {
     'user-read-recently-played',
     'user-top-read',
     'playlist-read-private',
-    'playlist-read-collaborative'
+    'playlist-read-collaborative',
+    'streaming',
+    'user-read-email',
+    'user-read-private'
   ].join(' ')
 };
 

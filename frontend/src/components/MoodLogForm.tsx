@@ -1,202 +1,177 @@
 import React, { useState } from 'react';
-import { api, aiAPI } from '../adapters/api';
-import { cn } from '../lib/utils';
-import { Button } from './ui/button';
+import { useMood } from '../contexts/MoodContext';
+import SpotifyButton from './spotify/SpotifyButton';
+import { FaLightbulb, FaChartLine } from 'react-icons/fa';
 
-const MOODS = [
-  { label: '😊 Happy', value: 'happy' },
-  { label: '😢 Sad', value: 'sad' },
-  { label: '😡 Angry', value: 'angry' },
-  { label: '😱 Anxious', value: 'anxious' },
-  { label: '😴 Tired', value: 'tired' },
-  { label: '😐 Neutral', value: 'neutral' },
-  { label: '😍 Loved', value: 'loved' },
-  { label: '🤩 Excited', value: 'excited' },
-];
-
-const MoodLogForm: React.FC<{ lastSongId?: string }> = ({ lastSongId }) => {
-  const [mood, setMood] = useState('');
+const MoodLogForm: React.FC = () => {
+  const { logMood, moodHistory, isLoading } = useMood();
+  const [selectedMood, setSelectedMood] = useState('');
   const [intensity, setIntensity] = useState(5);
   const [note, setNote] = useState('');
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const [isAnalyzing, setIsAnalyzing] = useState(false);
-  const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
+
+  const moods = [
+    { name: 'happy', emoji: '😊', color: 'bg-yellow-500' },
+    { name: 'sad', emoji: '😢', color: 'bg-blue-500' },
+    { name: 'excited', emoji: '🤩', color: 'bg-orange-500' },
+    { name: 'calm', emoji: '😌', color: 'bg-green-500' },
+    { name: 'angry', emoji: '😠', color: 'bg-red-500' },
+    { name: 'anxious', emoji: '😰', color: 'bg-purple-500' },
+    { name: 'relaxed', emoji: '😴', color: 'bg-teal-500' },
+    { name: 'energetic', emoji: '⚡', color: 'bg-pink-500' }
+  ];
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
-    if (!mood || intensity < 1 || intensity > 10) {
-      setMessage({ type: 'error', text: 'Please select a mood and set intensity (1-10)' });
-      return;
-    }
+    if (!selectedMood) return;
 
-    setIsSubmitting(true);
-    setMessage(null);
-
-    try {
-      const payload = {
-        mood,
-        mood_intensity: intensity,
-        note,
-        song_id: lastSongId,
-      };
-
-      await api.post('/moods', payload);
-      
-      setMessage({ type: 'success', text: 'Mood logged successfully!' });
-      setMood('');
-      setIntensity(5);
-      setNote('');
-    } catch (error: any) {
-      console.error('Failed to log mood:', error);
-      
-      // Fallback: store in localStorage if backend fails
-      const moodLogs = JSON.parse(localStorage.getItem('moodLogs') || '[]');
-      moodLogs.push({
-        id: Date.now(),
-        mood,
-        mood_intensity: intensity,
-        note,
-        song_id: lastSongId,
-        created_at: new Date().toISOString(),
-      });
-      localStorage.setItem('moodLogs', JSON.stringify(moodLogs));
-      
-      setMessage({ type: 'success', text: 'Mood logged locally (backend unavailable)' });
-      setMood('');
-      setIntensity(5);
-      setNote('');
-    } finally {
-      setIsSubmitting(false);
-    }
+    await logMood(selectedMood, intensity, note);
+    setSelectedMood('');
+    setIntensity(5);
+    setNote('');
   };
 
-  const handleAIAnalysis = async () => {
-    if (!note.trim()) {
-      setMessage({ type: 'error', text: 'Please add a note to analyze your mood' });
-      return;
-    }
-
-    setIsAnalyzing(true);
-    setMessage(null);
-
-    try {
-      const response = await aiAPI.analyzeMood(note, intensity);
-      const analysis = response.data.analysis;
-      
-      setMood(analysis.mood);
-      setMessage({ 
-        type: 'success', 
-        text: `AI analyzed your mood as: ${analysis.mood} (${Math.round(analysis.confidence * 100)}% confidence)` 
-      });
-    } catch (error: any) {
-      console.error('AI analysis failed:', error);
-      setMessage({ type: 'error', text: 'AI analysis failed. Please select mood manually.' });
-    } finally {
-      setIsAnalyzing(false);
-    }
-  };
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-spotify-dark-gray flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-spotify-green mx-auto mb-4"></div>
+          <p className="text-white">Loading...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
-    <form
-      onSubmit={handleSubmit}
-      className="w-full max-w-md bg-[#232323] rounded-xl shadow-lg p-6 flex flex-col gap-6 mx-auto mt-8"
-      aria-label="Mood Logging Form"
-    >
-      <div>
-        <label htmlFor="mood" className="block text-sm font-medium text-white mb-1">
-          Mood <span className="text-red-400">*</span>
-        </label>
-        <select
-          id="mood"
-          name="mood"
-          value={mood}
-          onChange={e => setMood(e.target.value)}
-          required
-          className="w-full rounded-md border border-[#333] bg-[#181818] text-white p-2 focus:ring-2 focus:ring-[#1DB954] focus:outline-none"
-          aria-required="true"
-        >
-          <option value="" disabled>
-            Select your mood
-          </option>
-          {MOODS.map(m => (
-            <option key={m.value} value={m.value}>
-              {m.label}
-            </option>
-          ))}
-        </select>
-      </div>
-
-      <div>
-        <label htmlFor="intensity" className="block text-sm font-medium text-white mb-1">
-          Intensity <span className="text-green-400">({intensity})</span>
-        </label>
-        <input
-          id="intensity"
-          name="intensity"
-          type="range"
-          min={1}
-          max={10}
-          value={intensity}
-          onChange={e => setIntensity(Number(e.target.value))}
-          className="w-full accent-[#1DB954]"
-          aria-valuenow={intensity}
-          aria-valuemin={1}
-          aria-valuemax={10}
-        />
-        <div className="flex justify-between text-xs text-gray-400 mt-1">
-          <span>Low</span>
-          <span>High</span>
+    <div className="min-h-screen bg-spotify-dark-gray p-8">
+      <div className="max-w-2xl mx-auto">
+        <div className="mb-8">
+          <h1 className="spotify-text-heading-large text-white mb-4 flex items-center gap-3">
+            <FaLightbulb className="text-spotify-green" />
+            Log Your Mood
+          </h1>
+          <p className="spotify-text-body-medium spotify-text-gray">
+            Take a moment to reflect on how you're feeling and get personalized music recommendations.
+          </p>
         </div>
-      </div>
 
-      <div>
-        <label htmlFor="note" className="block text-sm font-medium text-white mb-1">
-          Notes <span className="text-gray-400">(optional)</span>
-        </label>
-        <textarea
-          id="note"
-          name="note"
-          value={note}
-          onChange={e => setNote(e.target.value)}
-          rows={3}
-          className="w-full rounded-md border border-[#333] bg-[#181818] text-white p-2 focus:ring-2 focus:ring-[#1DB954] focus:outline-none resize-none"
-          placeholder="Write about your feelings..."
-          aria-label="Mood notes"
-        />
-      </div>
+        <div className="bg-spotify-medium-gray rounded-lg p-6">
+          <form onSubmit={handleSubmit} className="space-y-6">
+            {/* Mood Selection */}
+            <div>
+              <label className="block spotify-text-body-medium text-white mb-4">
+                How are you feeling right now?
+              </label>
+              <div className="grid grid-cols-4 gap-3">
+                {moods.map((mood) => (
+                  <button
+                    key={mood.name}
+                    type="button"
+                    onClick={() => setSelectedMood(mood.name)}
+                    className={`p-4 rounded-lg text-center transition-all ${
+                      selectedMood === mood.name
+                        ? 'bg-spotify-green text-black scale-105'
+                        : 'bg-spotify-border-gray text-white hover:bg-spotify-light-gray'
+                    }`}
+                  >
+                    <div className="text-2xl mb-2">{mood.emoji}</div>
+                    <div className="spotify-text-caption capitalize">
+                      {mood.name}
+                    </div>
+                  </button>
+                ))}
+              </div>
+            </div>
 
-      <Button
-        type="submit"
-        className={cn(
-          'w-full bg-[#1DB954] text-white font-semibold py-2 rounded-md transition hover:bg-[#1ed760] focus:ring-2 focus:ring-[#1DB954] focus:outline-none',
-          isSubmitting && 'opacity-60 cursor-not-allowed'
-        )}
-        disabled={isSubmitting}
-        aria-busy={isSubmitting}
-      >
-        {isSubmitting ? 'Logging...' : 'Log Mood'}
-      </Button>
+            {/* Intensity Slider */}
+            <div>
+              <label className="block spotify-text-body-medium text-white mb-3">
+                Intensity: {intensity}/10
+              </label>
+              <input
+                type="range"
+                min="1"
+                max="10"
+                value={intensity}
+                onChange={(e) => setIntensity(parseInt(e.target.value))}
+                className="w-full h-2 bg-spotify-border-gray rounded-lg appearance-none cursor-pointer slider"
+              />
+              <div className="flex justify-between mt-2">
+                <span className="spotify-text-caption spotify-text-gray">Low</span>
+                <span className="spotify-text-caption spotify-text-gray">High</span>
+              </div>
+            </div>
 
-      <Button
-        type="button"
-        onClick={handleAIAnalysis}
-        className={cn(
-          'w-full bg-[#1DB954] text-white font-semibold py-2 rounded-md transition hover:bg-[#1ed760] focus:ring-2 focus:ring-[#1DB954] focus:outline-none',
-          isAnalyzing && 'opacity-60 cursor-not-allowed'
-        )}
-        disabled={isAnalyzing}
-        aria-busy={isAnalyzing}
-      >
-        {isAnalyzing ? 'Analyzing...' : 'Analyze Mood with AI'}
-      </Button>
+            {/* Note */}
+            <div>
+              <label className="block spotify-text-body-medium text-white mb-3">
+                Add a note (optional)
+              </label>
+              <textarea
+                value={note}
+                onChange={(e) => setNote(e.target.value)}
+                className="spotify-input w-full h-24 resize-none"
+                placeholder="What's on your mind? Any specific thoughts or feelings?"
+              />
+            </div>
 
-      {message && (
-        <div className={`text-sm mt-2 ${message.type === 'success' ? 'text-green-400' : 'text-red-400'}`} role="status">
-          {message.text}
+            {/* Submit Button */}
+            <SpotifyButton
+              type="submit"
+              variant="primary"
+              disabled={!selectedMood || isLoading}
+              className="w-full"
+            >
+              {isLoading ? 'Logging Mood...' : 'Log Mood'}
+            </SpotifyButton>
+          </form>
         </div>
-      )}
-    </form>
+
+        {/* Recent Moods */}
+        {moodHistory.length > 0 && (
+          <div className="mt-8 bg-spotify-medium-gray rounded-lg p-6">
+            <h2 className="spotify-text-heading-small text-white mb-6 flex items-center gap-2">
+              <FaChartLine className="text-spotify-green" />
+              Recent Moods
+            </h2>
+            <div className="space-y-4">
+              {moodHistory.slice(0, 3).map((mood: any) => (
+                <div key={mood.id} className="bg-spotify-border-gray rounded-lg p-4">
+                  <div className="flex items-center justify-between mb-2">
+                    <div className="flex items-center gap-3">
+                      <span className="text-2xl">
+                        {mood.mood === 'happy' ? '😊' : 
+                         mood.mood === 'sad' ? '😢' : 
+                         mood.mood === 'excited' ? '🤩' : 
+                         mood.mood === 'calm' ? '😌' : 
+                         mood.mood === 'angry' ? '😠' : 
+                         mood.mood === 'anxious' ? '😰' : 
+                         mood.mood === 'relaxed' ? '😴' : '⚡'}
+                      </span>
+                      <div>
+                        <p className="spotify-text-body-medium text-white capitalize">
+                          {mood.mood}
+                        </p>
+                        <p className="spotify-text-caption spotify-text-gray">
+                          Intensity: {mood.mood_intensity}/10
+                        </p>
+                      </div>
+                    </div>
+                    <span className="spotify-text-caption spotify-text-gray">
+                      {new Date(mood.created_at).toLocaleDateString()}
+                    </span>
+                  </div>
+                  {mood.note && (
+                    <p className="spotify-text-body-small text-white">
+                      "{mood.note}"
+                    </p>
+                  )}
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+      </div>
+    </div>
   );
 };
 

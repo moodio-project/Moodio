@@ -26,6 +26,7 @@ interface AuthContextType {
   spotifyProfile: SpotifyProfile | null;
   token: string | null;
   login: (email: string, password: string) => Promise<void>;
+  loginWithSpotify: (token: string) => Promise<void>;
   spotifyLogin: () => Promise<void>;
   register: (username: string, email: string, password: string) => Promise<void>;
   logout: () => void;
@@ -112,6 +113,19 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     }
   };
 
+  const loginWithSpotify = async (token: string) => {
+    try {
+      const response = await api.post('/auth/spotify/login', { token });
+      const { user, token: newToken } = response.data;
+      
+      setUser(user);
+      setToken(newToken);
+      localStorage.setItem('token', newToken);
+    } catch (error) {
+      throw new Error('Spotify login failed');
+    }
+  };
+
   const spotifyLogin = async () => {
     try {
       const response = await api.get('/auth/spotify');
@@ -152,6 +166,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     spotifyProfile,
     token,
     login,
+    loginWithSpotify,
     spotifyLogin,
     register,
     logout,

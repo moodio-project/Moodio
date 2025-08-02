@@ -1,12 +1,19 @@
 {
   "name": "moodio",
-  "private": true,
   "version": "1.0.0",
+  "description": "A music companion app that tracks your mood and provides personalized recommendations",
+  "main": "index.js",
   "scripts": {
     "dev": "concurrently \"npm run dev --prefix backend\" \"npm run dev --prefix frontend\"",
-    "install:all": "npm install && cd backend && npm install && cd ../frontend && npm install",
-    "build": "npm run build --prefix backend && npm run build --prefix frontend"
+    "kill-ports": "lsof -ti:3001,5173 | xargs kill -9 2>/dev/null || true",
+    "dev:clean": "npm run kill-ports && npm run dev",
+    "build": "npm run build --prefix backend && npm run build --prefix frontend",
+    "start": "concurrently \"npm start --prefix backend\" \"npm start --prefix frontend\"",
+    "install:all": "npm install && npm install --prefix backend && npm install --prefix frontend"
   },
+  "keywords": ["music", "mood", "spotify", "ai", "recommendations"],
+  "author": "Moodio Team",
+  "license": "MIT",
   "devDependencies": {
     "concurrently": "^8.2.2"
   },

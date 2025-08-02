@@ -85,11 +85,13 @@ const authController = {
         delete (req.session as any).spotifyState;
       }
 
-      // Redirect to frontend with success
-      res.redirect(`${process.env.FRONTEND_URL || 'http://localhost:5173'}/dashboard?login=success`);
+      // Redirect to frontend with success and access token
+      const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:5173';
+      res.redirect(`${frontendUrl}/dashboard?login=success&token=${tokenResponse.access_token}`);
     } catch (error) {
       console.error('Spotify callback error:', error);
-      res.redirect(`${process.env.FRONTEND_URL || 'http://localhost:5173'}/login?error=auth_failed`);
+      const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:5173';
+      res.redirect(`${frontendUrl}/login?error=auth_failed`);
     }
   },
 

@@ -1,136 +1,292 @@
-import React, { useState, useEffect } from 'react';
-import { Button } from '../components/ui/button';
-import { aiAPI, spotifyAPI } from '../adapters/api';
+import React, { useState } from 'react';
+import { useMusic } from '../contexts/MusicContext';
+import SpotifyButton from '../components/spotify/SpotifyButton';
+import { FaSearch, FaPlay, FaHeart, FaPlus, FaCompass, FaMusic } from 'react-icons/fa';
 
 const Explore: React.FC = () => {
+  const { searchMusic, searchResults, playTrack, isLoading } = useMusic();
   const [searchQuery, setSearchQuery] = useState('');
-  const [searchResults, setSearchResults] = useState<any[]>([]);
-  const [recommendations, setRecommendations] = useState<any[]>([]);
-  const [loading, setLoading] = useState(false);
-  const [spotifyProfile, setSpotifyProfile] = useState<any>(null);
+  const [searchType, setSearchType] = useState<'track' | 'artist' | 'album'>('track');
+  const [isSearching, setIsSearching] = useState(false);
+  const [activeTab, setActiveTab] = useState<'search' | 'discover'>('search');
 
-  useEffect(() => {
-    fetchRecommendations();
-    fetchSpotifyProfile();
-  }, []);
-
-  const fetchRecommendations = async () => {
-    try {
-      const response = await aiAPI.getSongRecommendations('happy', 6);
-      setRecommendations(response.data.recommendations || []);
-    } catch (error) {
-      console.error('Failed to fetch recommendations:', error);
-    }
-  };
-
-  const fetchSpotifyProfile = async () => {
-    try {
-      const response = await spotifyAPI.getProfile();
-      setSpotifyProfile(response.data);
-    } catch (error) {
-      console.error('Failed to fetch Spotify profile:', error);
-    }
-  };
-
-  const handleSearch = async () => {
+  const handleSearch = async (e: React.FormEvent) => {
+    e.preventDefault();
     if (!searchQuery.trim()) return;
-    
-    setLoading(true);
+
     try {
-      const response = await aiAPI.searchSongs(searchQuery, 10);
-      setSearchResults(response.data || []);
+      setIsSearching(true);
+      await searchMusic(searchQuery, searchType);
     } catch (error) {
       console.error('Search failed:', error);
-      setSearchResults([]);
     } finally {
-      setLoading(false);
+      setIsSearching(false);
     }
   };
 
+  const renderTrackCard = (track: any, index: number) => (
+    <div key={track.id || index} className="bg-spotify-medium-gray rounded-lg p-4 hover:bg-spotify-light-gray transition-colors">
+      <div className="flex items-center gap-4 mb-3">
+        <img
+          src={track.album?.images[0]?.url || 'https://via.placeholder.com/60x60'}
+          alt={track.name}
+          className="w-15 h-15 rounded object-cover"
+        />
+        <div className="flex-1 min-w-0">
+          <h3 className="spotify-text-body-medium text-white truncate">
+            {track.name}
+          </h3>
+          <p className="spotify-text-body-small spotify-text-gray truncate">
+            {track.artists?.map((a: any) => a.name).join(', ')}
+          </p>
+          <p className="spotify-text-caption spotify-text-gray truncate">
+            {track.album?.name}
+          </p>
+        </div>
+      </div>
+      <div className="flex gap-2">
+        <SpotifyButton variant="small" onClick={() => playTrack(track.uri)}>
+          <FaPlay />
+        </SpotifyButton>
+        <SpotifyButton variant="small" onClick={() => {}}>
+          <FaHeart />
+        </SpotifyButton>
+        <SpotifyButton variant="small" onClick={() => {}}>
+          <FaPlus />
+        </SpotifyButton>
+      </div>
+    </div>
+  );
+
+  const renderArtistCard = (artist: any, index: number) => (
+    <div key={artist.id || index} className="bg-spotify-medium-gray rounded-lg p-4 hover:bg-spotify-light-gray transition-colors">
+      <div className="text-center">
+        <img
+          src={artist.images?.[0]?.url || 'https://via.placeholder.com/120x120'}
+          alt={artist.name}
+          className="w-24 h-24 rounded-full mx-auto mb-3 object-cover"
+        />
+        <h3 className="spotify-text-body-medium text-white mb-1">
+          {artist.name}
+        </h3>
+        <p className="spotify-text-caption spotify-text-gray mb-3">
+          {artist.genres?.slice(0, 2).join(', ')}
+        </p>
+        <div className="flex gap-2 justify-center">
+          <SpotifyButton variant="small" onClick={() => {}}>
+            <FaHeart />
+          </SpotifyButton>
+          <SpotifyButton variant="small" onClick={() => {}}>
+            <FaPlus />
+          </SpotifyButton>
+        </div>
+      </div>
+    </div>
+  );
+
+  const renderAlbumCard = (album: any, index: number) => (
+    <div key={album.id || index} className="bg-spotify-medium-gray rounded-lg p-4 hover:bg-spotify-light-gray transition-colors">
+      <div className="text-center">
+        <img
+          src={album.images?.[0]?.url || 'https://via.placeholder.com/120x120'}
+          alt={album.name}
+          className="w-24 h-24 rounded mx-auto mb-3 object-cover"
+        />
+        <h3 className="spotify-text-body-medium text-white mb-1">
+          {album.name}
+        </h3>
+        <p className="spotify-text-caption spotify-text-gray mb-3">
+          {album.artists?.map((a: any) => a.name).join(', ')}
+        </p>
+        <div className="flex gap-2 justify-center">
+          <SpotifyButton variant="small" onClick={() => {}}>
+            <FaHeart />
+          </SpotifyButton>
+          <SpotifyButton variant="small" onClick={() => {}}>
+            <FaPlus />
+          </SpotifyButton>
+        </div>
+      </div>
+    </div>
+  );
+
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-spotify-dark-gray flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-spotify-green mx-auto mb-4"></div>
+          <p className="text-white">Loading...</p>
+        </div>
+      </div>
+    );
+  }
+
   return (
-    <div className="min-h-screen bg-gradient-to-br from-[#191414] to-[#1DB954]/10">
-      {/* Header */}
-      <header className="bg-[#181818] border-b border-[#222] px-6 py-4">
-        <div className="flex items-center justify-between">
-          <div>
-            <h1 className="text-2xl font-bold text-white">Explore Music</h1>
-            <p className="text-gray-400">Discover new songs and artists</p>
-          </div>
-          {spotifyProfile && (
-            <div className="flex items-center space-x-3">
-              <img 
-                src={spotifyProfile.images?.[0]?.url || '/default-avatar.png'} 
-                alt="Profile" 
-                className="w-10 h-10 rounded-full"
-              />
-              <span className="text-white">{spotifyProfile.display_name}</span>
+    <div className="min-h-screen bg-spotify-dark-gray p-8">
+      <div className="max-w-6xl mx-auto">
+        <div className="mb-8">
+          <h1 className="spotify-text-heading-large text-white mb-4 flex items-center gap-3">
+            <FaCompass className="text-spotify-green" />
+            Explore Music
+          </h1>
+          <p className="spotify-text-body-medium spotify-text-gray">
+            Discover new tracks, artists, and albums. Find music that matches your mood and preferences.
+          </p>
+        </div>
+
+        {/* Search Section */}
+        <div className="bg-spotify-medium-gray rounded-lg p-6 mb-8">
+          <form onSubmit={handleSearch} className="space-y-4">
+            <div className="flex gap-4">
+              <div className="flex-1">
+                <input
+                  type="text"
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  placeholder="Search for tracks, artists, or albums..."
+                  className="spotify-input w-full"
+                />
+              </div>
+              <select
+                value={searchType}
+                onChange={(e) => setSearchType(e.target.value as 'track' | 'artist' | 'album')}
+                className="spotify-input bg-spotify-border-gray"
+              >
+                <option value="track">Tracks</option>
+                <option value="artist">Artists</option>
+                <option value="album">Albums</option>
+              </select>
+              <SpotifyButton type="submit" variant="primary" disabled={isSearching}>
+                <FaSearch className="mr-2" />
+                {isSearching ? 'Searching...' : 'Search'}
+              </SpotifyButton>
+            </div>
+          </form>
+        </div>
+
+        {/* Tabs */}
+        <div className="flex gap-4 mb-6">
+          <button
+            onClick={() => setActiveTab('search')}
+            className={`px-4 py-2 rounded-lg transition-colors ${
+              activeTab === 'search'
+                ? 'bg-spotify-green text-black'
+                : 'bg-spotify-border-gray text-white hover:bg-spotify-light-gray'
+            }`}
+          >
+            Search Results
+          </button>
+          <button
+            onClick={() => setActiveTab('discover')}
+            className={`px-4 py-2 rounded-lg transition-colors ${
+              activeTab === 'discover'
+                ? 'bg-spotify-green text-black'
+                : 'bg-spotify-border-gray text-white hover:bg-spotify-light-gray'
+            }`}
+          >
+            Discover
+          </button>
+        </div>
+
+        {/* Content */}
+        <div className="space-y-6">
+          {activeTab === 'search' && (
+            <div>
+              <h2 className="spotify-text-heading-small text-white mb-4">
+                {searchQuery ? `Search Results for "${searchQuery}"` : 'Search Results'}
+              </h2>
+              {searchQuery ? (
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+                  {searchType === 'track' && searchResults.tracks.map(renderTrackCard)}
+                  {searchType === 'artist' && searchResults.artists.map(renderArtistCard)}
+                  {searchType === 'album' && searchResults.albums.map(renderAlbumCard)}
+                </div>
+              ) : (
+                <div className="text-center py-12">
+                  <div className="text-4xl mb-4">🔍</div>
+                  <p className="spotify-text-body-medium text-white mb-2">
+                    Start searching for music
+                  </p>
+                  <p className="spotify-text-body-small spotify-text-gray">
+                    Enter a search term above to discover new tracks, artists, and albums
+                  </p>
+                </div>
+              )}
             </div>
           )}
-        </div>
-      </header>
 
-      {/* Main Content */}
-      <div className="p-6">
-        {/* Search Section */}
-        <div className="bg-[#232323] rounded-xl p-6 mb-6">
-          <h2 className="text-xl font-semibold text-white mb-4">Search Songs</h2>
-          <div className="flex gap-4">
-            <input
-              type="text"
-              placeholder="Search for songs, artists, or albums..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              onKeyPress={(e) => e.key === 'Enter' && handleSearch()}
-              className="flex-1 px-4 py-2 bg-[#181818] border border-[#333] rounded-md text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#1DB954]"
-            />
-            <Button 
-              onClick={handleSearch}
-              disabled={loading}
-              className="bg-[#1DB954] hover:bg-[#1ed760] text-white"
-            >
-              {loading ? 'Searching...' : 'Search'}
-            </Button>
-          </div>
-        </div>
-
-        {/* Search Results */}
-        {searchResults.length > 0 && (
-          <div className="bg-[#232323] rounded-xl p-6 mb-6">
-            <h2 className="text-xl font-semibold text-white mb-4">Search Results</h2>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-              {searchResults.map((song, index) => (
-                <div key={index} className="bg-[#181818] rounded-lg p-4 hover:bg-[#222] transition-colors">
-                  <h3 className="text-white font-medium">{song.title}</h3>
-                  <p className="text-gray-400 text-sm">{song.artist}</p>
-                  {song.thumbnail && (
-                    <img src={song.thumbnail} alt={song.title} className="w-full h-32 object-cover rounded mt-2" />
-                  )}
+          {activeTab === 'discover' && (
+            <div>
+              <h2 className="spotify-text-heading-small text-white mb-6">
+                Discover New Music
+              </h2>
+              
+              {/* Mood-Based Discovery */}
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+                <div className="bg-spotify-medium-gray rounded-lg p-6 text-center">
+                  <div className="text-4xl mb-4">😊</div>
+                  <h3 className="spotify-text-body-medium text-white mb-2">Happy Vibes</h3>
+                  <p className="spotify-text-body-small spotify-text-gray mb-4">
+                    Uplifting and energetic music
+                  </p>
+                  <SpotifyButton variant="secondary" className="w-full">
+                    Explore
+                  </SpotifyButton>
                 </div>
-              ))}
-            </div>
-          </div>
-        )}
-
-        {/* AI Recommendations */}
-        <div className="bg-[#232323] rounded-xl p-6">
-          <div className="flex items-center justify-between mb-4">
-            <h2 className="text-xl font-semibold text-white">AI Recommendations</h2>
-            <Button 
-              onClick={fetchRecommendations}
-              className="bg-[#1DB954] hover:bg-[#1ed760] text-white"
-            >
-              Refresh
-            </Button>
-          </div>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {recommendations.map((rec, index) => (
-              <div key={index} className="bg-[#181818] rounded-lg p-4 hover:bg-[#222] transition-colors">
-                <h3 className="text-white font-medium">{rec.title}</h3>
-                <p className="text-gray-400 text-sm">{rec.artist}</p>
-                <p className="text-[#1DB954] text-xs mt-2">{rec.reason}</p>
+                
+                <div className="bg-spotify-medium-gray rounded-lg p-6 text-center">
+                  <div className="text-4xl mb-4">😌</div>
+                  <h3 className="spotify-text-body-medium text-white mb-2">Chill & Relax</h3>
+                  <p className="spotify-text-body-small spotify-text-gray mb-4">
+                    Calming and peaceful music
+                  </p>
+                  <SpotifyButton variant="secondary" className="w-full">
+                    Explore
+                  </SpotifyButton>
+                </div>
+                
+                <div className="bg-spotify-medium-gray rounded-lg p-6 text-center">
+                  <div className="text-4xl mb-4">😢</div>
+                  <h3 className="spotify-text-body-medium text-white mb-2">Emotional</h3>
+                  <p className="spotify-text-body-small spotify-text-gray mb-4">
+                    Deep and meaningful music
+                  </p>
+                  <SpotifyButton variant="secondary" className="w-full">
+                    Explore
+                  </SpotifyButton>
+                </div>
+                
+                <div className="bg-spotify-medium-gray rounded-lg p-6 text-center">
+                  <div className="text-4xl mb-4">⚡</div>
+                  <h3 className="spotify-text-body-medium text-white mb-2">Energetic</h3>
+                  <p className="spotify-text-body-small spotify-text-gray mb-4">
+                    High-energy and motivating music
+                  </p>
+                  <SpotifyButton variant="secondary" className="w-full">
+                    Explore
+                  </SpotifyButton>
+                </div>
               </div>
-            ))}
-          </div>
+
+              {/* Genre Exploration */}
+              <div className="bg-spotify-medium-gray rounded-lg p-6">
+                <h3 className="spotify-text-heading-small text-white mb-4 flex items-center gap-2">
+                  <FaMusic className="text-spotify-green" />
+                  Explore by Genre
+                </h3>
+                <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-3">
+                  {['Pop', 'Rock', 'Hip Hop', 'Electronic', 'Jazz', 'Classical', 'Country', 'R&B', 'Indie', 'Alternative', 'Folk', 'Blues'].map((genre) => (
+                    <button
+                      key={genre}
+                      className="bg-spotify-border-gray hover:bg-spotify-light-gray rounded-lg p-3 text-center transition-colors"
+                    >
+                      <p className="spotify-text-body-small text-white">{genre}</p>
+                    </button>
+                  ))}
+                </div>
+              </div>
+            </div>
+          )}
         </div>
       </div>
     </div>
