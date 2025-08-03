@@ -2,9 +2,8 @@ import React, { useState, useEffect } from 'react';
 import { auth } from '../api';
 
 interface LoginProps {
-  onLogin: (user: any, token: string) => void;
+  onLogin: (user: any, token: string, spotifyToken?: string, hasPremium?: boolean) => void;
 }
-
 const Login: React.FC<LoginProps> = ({ onLogin }) => {
   const [isLogin, setIsLogin] = useState(true);
   const [formData, setFormData] = useState({
@@ -49,7 +48,7 @@ const Login: React.FC<LoginProps> = ({ onLogin }) => {
   };
 
   const handleSpotifyLogin = () => {
-    window.location.href = 'http://localhost:3001/auth/spotify';
+    window.location.href = 'http://localhost:3001/auth/spotify';  // This exact URL
   };
 
   return (

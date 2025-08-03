@@ -1,3 +1,5 @@
+// ===== UPDATE YOUR Dashboard.tsx component signature and SpotifyPlayer usage =====
+
 import React, { useState, useEffect } from 'react';
 import { moods } from '../api';
 import Navigation from './Navigation';
@@ -18,20 +20,36 @@ interface Mood {
   created_at: string;
 }
 
+// ✅ UPDATE THIS INTERFACE
 interface DashboardProps {
   user: User;
   onLogout: () => void;
+  spotifyToken?: string | null;  // Add this prop
+  hasPremium?: boolean;          // Add this prop
 }
 
-const Dashboard: React.FC<DashboardProps> = ({ user, onLogout }) => {
+// ✅ UPDATE THE COMPONENT SIGNATURE
+const Dashboard: React.FC<DashboardProps> = ({ user, onLogout, spotifyToken, hasPremium }) => {
   const [userMoods, setUserMoods] = useState<Mood[]>([]);
   const [showMoodForm, setShowMoodForm] = useState(false);
   const [recommendedTracks, setRecommendedTracks] = useState<any[]>([]);
+  const [recommendationData, setRecommendationData] = useState<any>(null);
   const [newMood, setNewMood] = useState({
     mood: 'happy',
     intensity: 5,
     note: ''
   });
+
+  // ✅ ADD DEBUG LOGGING
+  useEffect(() => {
+    console.log('🎯 Dashboard received props:', {
+      hasUser: !!user,
+      hasSpotifyToken: !!spotifyToken,
+      hasPremium: hasPremium,
+      spotifyTokenLength: spotifyToken?.length,
+      spotifyTokenPreview: spotifyToken ? spotifyToken.substring(0, 20) + '...' : 'None'
+    });
+  }, [user, spotifyToken, hasPremium]);
 
   useEffect(() => {
     loadMoods();
@@ -39,7 +57,7 @@ const Dashboard: React.FC<DashboardProps> = ({ user, onLogout }) => {
 
   useEffect(() => {
     if (userMoods.length > 0) {
-      loadRecommendations(userMoods[0].mood);
+      loadEnhancedRecommendations(userMoods[0].mood);
     }
   }, [userMoods]);
 
@@ -52,12 +70,21 @@ const Dashboard: React.FC<DashboardProps> = ({ user, onLogout }) => {
     }
   };
 
-  const loadRecommendations = async (mood: string) => {
+  const loadEnhancedRecommendations = async (mood: string) => {
     try {
-      const response: any = await spotify.getRecommendations(mood);
-      setRecommendedTracks(response.tracks || []);
+      // Try enhanced recommendations first
+      const response: any = await spotify.getEnhancedRecommendations(mood);
+      setRecommendedTracks(response.recommendations || []);
+      setRecommendationData(response);
     } catch (error) {
-      console.error('Failed to load recommendations:', error);
+      console.error('Failed to load enhanced recommendations:', error);
+      // Fallback to basic recommendations
+      try {
+        const fallbackResponse: any = await spotify.getRecommendations(mood);
+        setRecommendedTracks(fallbackResponse.tracks || []);
+      } catch (fallbackError) {
+        console.error('Fallback recommendations also failed:', fallbackError);
+      }
     }
   };
 
@@ -68,9 +95,51 @@ const Dashboard: React.FC<DashboardProps> = ({ user, onLogout }) => {
       setNewMood({ mood: 'happy', intensity: 5, note: '' });
       setShowMoodForm(false);
       loadMoods();
+      
+      // Show success notification
+      showNotification('Mood logged successfully! 🎵');
     } catch (error) {
       console.error('Failed to save mood:', error);
+      showNotification('Failed to save mood. Please try again.', 'error');
     }
+  };
+
+  const showNotification = (message: string, type: 'success' | 'error' = 'success') => {
+    // Simple toast notification
+    const notification = document.createElement('div');
+    notification.textContent = message;
+    notification.style.cssText = `
+      position: fixed;
+      top: 20px;
+      right: 20px;
+      background: ${type === 'success' ? '#1DB954' : '#FF6B6B'};
+      color: white;
+      padding: 12px 24px;
+      border-radius: 8px;
+      z-index: 1000;
+      font-weight: 600;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+      transition: all 0.3s ease;
+    `;
+    
+    document.body.appendChild(notification);
+    
+    // Animate in
+    setTimeout(() => {
+      notification.style.transform = 'translateX(0)';
+      notification.style.opacity = '1';
+    }, 100);
+    
+    // Animate out and remove
+    setTimeout(() => {
+      notification.style.transform = 'translateX(100%)';
+      notification.style.opacity = '0';
+      setTimeout(() => {
+        if (document.body.contains(notification)) {
+          document.body.removeChild(notification);
+        }
+      }, 300);
+    }, 3000);
   };
 
   const moodEmojis: { [key: string]: string } = {
@@ -104,11 +173,31 @@ const Dashboard: React.FC<DashboardProps> = ({ user, onLogout }) => {
           </p>
         </div>
 
-        {/* Main Content - Spotify Player & Mood Logging */}
+        {/* ✅ DEBUG INFO SECTION - Remove this after testing */}
+        <div style={{ 
+          background: '#282828', 
+          padding: '16px', 
+          borderRadius: '8px', 
+          marginBottom: '32px',
+          fontSize: '12px',
+          color: '#B3B3B3'
+        }}>
+          <h3 style={{ color: 'white', margin: '0 0 8px 0' }}>Debug Info:</h3>
+          <p>Spotify Token: {spotifyToken ? 'Present (' + spotifyToken.length + ' chars)' : 'Missing'}</p>
+          <p>Has Premium: {hasPremium ? 'Yes' : 'No'}</p>
+          <p>Token Preview: {spotifyToken ? spotifyToken.substring(0, 30) + '...' : 'None'}</p>
+          <p>Local Storage Token: {localStorage.getItem('spotify_token') ? 'Present' : 'Missing'}</p>
+          <p>Local Storage Premium: {localStorage.getItem('has_premium')}</p>
+        </div>
+
+        {/* Main Content - ✅ PASS ALL PROPS TO SPOTIFY PLAYER */}
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '32px', marginBottom: '32px' }}>
           
-          {/* Spotify Player */}
-          <SpotifyPlayer />
+          {/* ✅ UPDATED SPOTIFY PLAYER WITH ALL PROPS */}
+          <SpotifyPlayer 
+            accessToken={spotifyToken} 
+            hasPremium={hasPremium}
+          />
           
           {/* Quick Mood Log */}
           <div className="card">
@@ -184,59 +273,7 @@ const Dashboard: React.FC<DashboardProps> = ({ user, onLogout }) => {
           </div>
         </div>
 
-        {/* Mood-based Recommendations */}
-        {recommendedTracks.length > 0 && (
-          <div className="card" style={{ marginBottom: '32px' }}>
-            <h2 style={{ color: 'white', marginBottom: '16px' }}>
-              🎵 Songs for your {userMoods[0]?.mood} mood
-            </h2>
-            <p style={{ color: '#B3B3B3', marginBottom: '24px', fontSize: '14px' }}>
-              Based on your listening history and current mood
-            </p>
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(180px, 1fr))', gap: '16px' }}>
-              {recommendedTracks.map((track: any) => (
-                <div 
-                  key={track.id} 
-                  style={{
-                    background: '#181818',
-                    borderRadius: '8px',
-                    padding: '16px',
-                    cursor: 'pointer',
-                    transition: 'all 0.2s ease',
-                    border: '1px solid transparent'
-                  }}
-                  onMouseEnter={(e) => {
-                    e.currentTarget.style.background = '#282828';
-                    e.currentTarget.style.borderColor = '#1DB954';
-                  }}
-                  onMouseLeave={(e) => {
-                    e.currentTarget.style.background = '#181818';
-                    e.currentTarget.style.borderColor = 'transparent';
-                  }}
-                >
-                  <img 
-                    src={track.album.images[0]?.url}
-                    alt={track.album.name}
-                    style={{
-                      width: '100%',
-                      aspectRatio: '1',
-                      borderRadius: '8px',
-                      marginBottom: '12px',
-                      objectFit: 'cover'
-                    }}
-                  />
-                  <h4 style={{ color: 'white', margin: '0 0 4px 0', fontSize: '14px', fontWeight: '600' }}>
-                    {track.name}
-                  </h4>
-                  <p style={{ color: '#B3B3B3', margin: 0, fontSize: '13px' }}>
-                    {track.artists[0].name}
-                  </p>
-                </div>
-              ))}
-            </div>
-          </div>
-        )}
-
+        {/* Rest of your dashboard content stays the same... */}
         {/* Recent Moods */}
         <div className="card">
           <h2 style={{ color: 'white', marginBottom: '24px' }}>Recent Moods</h2>

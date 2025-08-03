@@ -24,7 +24,7 @@ export const auth = {
     const response = await api.post('/auth/register', { username, email, password });
     return response.data;
   },
-  
+
   spotifyExchange: async (code: string) => {
     const response = await api.post('/auth/spotify/exchange', { code });
     return response.data;
@@ -60,6 +60,16 @@ export const spotify = {
     const response = await api.get('/spotify/top-tracks');
     return response.data;
   },
+  getEnhancedArtist: async (artistId: string) => {
+    const response = await api.get(`/artists/${artistId}/enhanced`);
+    return response.data;
+  },
+  
+  getEnhancedRecommendations: async (mood: string) => {
+    const response = await api.get(`/recommendations/${mood}/enhanced`);
+    return response.data;
+  },
+  
   search: async (query: string, type = 'track,artist,album', limit = 20) => {
     const response = await api.get(`/spotify/search?q=${encodeURIComponent(query)}&type=${type}&limit=${limit}`);
     return response.data;

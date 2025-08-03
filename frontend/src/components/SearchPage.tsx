@@ -9,15 +9,30 @@ interface User {
 }
 
 interface SearchPageProps {
-  user: User;
-  onLogout: () => void;
-}
-
+    user: User;
+    onLogout: () => void;
+    spotifyToken?: string | null;
+    hasPremium?: boolean;
+  }
+  
 const SearchPage: React.FC<SearchPageProps> = ({ user, onLogout }) => {
   const [searchQuery, setSearchQuery] = useState('');
   const [searchResults, setSearchResults] = useState<any>(null);
   const [loading, setLoading] = useState(false);
   const [activeTab, setActiveTab] = useState('tracks');
+
+  // ✅ ADD THIS PLAY FUNCTION
+  const playTrack = (trackUri: string, trackName: string) => {
+    console.log('🎵 Attempting to play:', trackName, trackUri);
+    
+    if ((window as any).moodioPlayTrack) {
+      (window as any).moodioPlayTrack(trackUri);
+      console.log('✅ Play command sent');
+    } else {
+      console.log('❌ Player not ready');
+      alert('Music player not ready. Please wait a moment and try again.');
+    }
+  };
 
   const handleSearch = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -179,7 +194,12 @@ const SearchPage: React.FC<SearchPageProps> = ({ user, onLogout }) => {
                           {formatDuration(track.duration_ms)}
                         </p>
                       </div>
+                      {/* ✅ FIXED PLAY BUTTON WITH ONCLICK */}
                       <button
+                        onClick={(e) => {
+                          e.stopPropagation(); // Prevent row click
+                          playTrack(track.uri, track.name);
+                        }}
                         style={{
                           background: '#1DB954',
                           border: 'none',
@@ -190,7 +210,16 @@ const SearchPage: React.FC<SearchPageProps> = ({ user, onLogout }) => {
                           alignItems: 'center',
                           justifyContent: 'center',
                           cursor: 'pointer',
-                          fontSize: '16px'
+                          fontSize: '16px',
+                          transition: 'all 0.2s ease'
+                        }}
+                        onMouseEnter={(e) => {
+                          e.currentTarget.style.background = '#1ed760';
+                          e.currentTarget.style.transform = 'scale(1.1)';
+                        }}
+                        onMouseLeave={(e) => {
+                          e.currentTarget.style.background = '#1DB954';
+                          e.currentTarget.style.transform = 'scale(1)';
                         }}
                       >
                         ▶️
