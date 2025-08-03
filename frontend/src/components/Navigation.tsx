@@ -1,5 +1,7 @@
+// Navigation.tsx - Fixed with clickable Moodio logo
+
 import React from 'react';
-import { useNavigate, useLocation } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 
 interface User {
   id: number;
@@ -15,170 +17,176 @@ interface NavigationProps {
 
 const Navigation: React.FC<NavigationProps> = ({ user, currentPage, onLogout }) => {
   const navigate = useNavigate();
-  const location = useLocation();
 
-  const navItems = [
-    { id: 'dashboard', label: 'Dashboard', icon: '🏠', path: '/dashboard' },
-    { id: 'search', label: 'Search', icon: '🔍', path: '/search' },
-    { id: 'mood-log', label: 'Log Mood', icon: '✨', path: '/dashboard' },
-    { id: 'mood-history', label: 'Mood History', icon: '📊', path: '/mood-history' },
-    { id: 'profile', label: 'Profile', icon: '👤', path: '/profile' },
+  const handleLogoClick = () => {
+    navigate('/dashboard');
+  };
+
+  const menuItems = [
+    { id: 'dashboard', icon: '🏠', label: 'Dashboard', path: '/dashboard' },
+    { id: 'search', icon: '🔍', label: 'Search', path: '/search' },
+    { id: 'mood-log', icon: '✨', label: 'Log Mood', path: '/mood-log' },
+    { id: 'mood-history', icon: '📊', label: 'Mood History', path: '/mood-history' },
+    { id: 'profile', icon: '👤', label: 'Profile', path: '/profile' }
   ];
 
-  const getCurrentPageId = () => {
-    const path = location.pathname;
-    if (path.includes('/artist/')) return 'search';
-    if (path === '/dashboard') return 'dashboard';
-    if (path === '/search') return 'search';
-    if (path === '/mood-history') return 'mood-history';
-    if (path === '/profile') return 'profile';
-    return currentPage;
-  };
-
-  const activePageId = getCurrentPageId();
-
-  const handleNavClick = (path: string) => {
-    navigate(path);
-  };
-
   return (
-    <div style={{
-      width: '240px',
-      height: '100vh',
-      background: '#000000',
-      padding: '24px 0',
+    <nav style={{
       position: 'fixed',
       left: 0,
       top: 0,
+      width: '240px',
+      height: '100vh',
+      background: '#000000',
       display: 'flex',
-      flexDirection: 'column'
+      flexDirection: 'column',
+      zIndex: 1000,
+      borderRight: '1px solid #282828'
     }}>
-      {/* Logo */}
-      <div style={{ padding: '0 24px', marginBottom: '32px' }}>
-        <h1 style={{ 
-          color: '#1DB954', 
-          fontSize: '28px', 
-          margin: 0,
-          fontWeight: 'bold',
-          cursor: 'pointer'
+      {/* Logo Section - NOW CLICKABLE! */}
+      <div 
+        onClick={handleLogoClick}
+        style={{
+          padding: '24px 20px',
+          borderBottom: '1px solid #282828',
+          cursor: 'pointer', // Make it clear it's clickable
+          transition: 'background-color 0.2s ease'
         }}
-        onClick={() => handleNavClick('/dashboard')}
-        >
-          Moodio
-        </h1>
-        <p style={{ 
-          color: '#B3B3B3', 
-          margin: '4px 0 0 0',
-          fontSize: '14px'
+        onMouseOver={(e) => {
+          e.currentTarget.style.backgroundColor = 'rgba(255, 255, 255, 0.05)';
+        }}
+        onMouseOut={(e) => {
+          e.currentTarget.style.backgroundColor = 'transparent';
+        }}
+      >
+        <div style={{
+          display: 'flex',
+          alignItems: 'center',
+          gap: '12px'
         }}>
-          Your Music, Your Mood
-        </p>
+          <span style={{ fontSize: '24px' }}>🎵</span>
+          <span style={{
+            color: '#FFFFFF',
+            fontSize: '24px',
+            fontWeight: 'bold',
+            letterSpacing: '-0.5px'
+          }}>
+            Moodio
+          </span>
+        </div>
       </div>
 
-      {/* Navigation Links */}
-      <nav style={{ flex: 1 }}>
-        {navItems.map((item) => (
-          <button
+      {/* Menu Items */}
+      <div style={{ flex: 1, padding: '16px 0' }}>
+        {menuItems.map((item) => (
+          <div
             key={item.id}
-            onClick={() => handleNavClick(item.path)}
+            onClick={() => navigate(item.path)}
             style={{
-              width: '100%',
               display: 'flex',
               alignItems: 'center',
-              padding: '12px 24px',
-              color: activePageId === item.id ? '#1DB954' : '#B3B3B3',
-              background: 'none',
-              border: 'none',
-              fontSize: '16px',
-              fontWeight: activePageId === item.id ? '600' : '400',
-              backgroundColor: activePageId === item.id ? 'rgba(29, 185, 84, 0.1)' : 'transparent',
-              borderRight: activePageId === item.id ? '3px solid #1DB954' : 'none',
-              transition: 'all 0.2s ease',
+              gap: '16px',
+              padding: '12px 20px',
+              margin: '4px 8px',
+              borderRadius: '6px',
               cursor: 'pointer',
-              textAlign: 'left'
+              background: currentPage === item.id ? 'rgba(29, 185, 84, 0.1)' : 'transparent',
+              border: currentPage === item.id ? '1px solid #1DB954' : '1px solid transparent',
+              transition: 'all 0.2s ease'
             }}
-            onMouseEnter={(e) => {
-              if (activePageId !== item.id) {
-                e.currentTarget.style.color = '#FFFFFF';
-                e.currentTarget.style.backgroundColor = 'rgba(255, 255, 255, 0.1)';
+            onMouseOver={(e) => {
+              if (currentPage !== item.id) {
+                e.currentTarget.style.backgroundColor = 'rgba(255, 255, 255, 0.05)';
               }
             }}
-            onMouseLeave={(e) => {
-              if (activePageId !== item.id) {
-                e.currentTarget.style.color = '#B3B3B3';
+            onMouseOut={(e) => {
+              if (currentPage !== item.id) {
                 e.currentTarget.style.backgroundColor = 'transparent';
               }
             }}
           >
-            <span style={{ marginRight: '16px', fontSize: '20px' }}>
-              {item.icon}
+            <span style={{ fontSize: '18px', opacity: 0.9 }}>{item.icon}</span>
+            <span style={{
+              color: currentPage === item.id ? '#1DB954' : '#B3B3B3',
+              fontSize: '14px',
+              fontWeight: currentPage === item.id ? '600' : '500'
+            }}>
+              {item.label}
             </span>
-            {item.label}
-          </button>
+          </div>
         ))}
-      </nav>
+      </div>
 
       {/* User Section */}
-      <div style={{ 
-        padding: '24px',
+      <div style={{
+        padding: '16px 20px',
         borderTop: '1px solid #282828'
       }}>
-        <div style={{ 
-          display: 'flex', 
+        <div style={{
+          display: 'flex',
           alignItems: 'center',
-          marginBottom: '16px'
+          gap: '12px',
+          marginBottom: '12px'
         }}>
           <div style={{
-            width: '40px',
-            height: '40px',
+            width: '32px',
+            height: '32px',
             borderRadius: '50%',
-            background: '#1DB954',
+            background: 'linear-gradient(135deg, #1DB954, #1ed760)',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
-            marginRight: '12px',
-            fontSize: '18px',
-            fontWeight: 'bold',
-            color: 'black'
+            color: 'white',
+            fontSize: '14px',
+            fontWeight: 'bold'
           }}>
-            {user.username?.charAt(0).toUpperCase() || 'U'}
+            {user.username.charAt(0).toUpperCase()}
           </div>
           <div>
-            <p style={{ color: 'white', margin: 0, fontSize: '14px', fontWeight: '600' }}>
-              {user.username || 'User'}
+            <p style={{
+              color: '#FFFFFF',
+              fontSize: '14px',
+              fontWeight: '600',
+              margin: '0 0 2px 0'
+            }}>
+              {user.username}
             </p>
-            <p style={{ color: '#B3B3B3', margin: 0, fontSize: '12px' }}>
-              {user.email}
+            <p style={{
+              color: '#B3B3B3',
+              fontSize: '12px',
+              margin: 0
+            }}>
+              Free Plan
             </p>
           </div>
         </div>
-        
+
         <button
           onClick={onLogout}
-          style={{ 
+          style={{
             width: '100%',
-            padding: '8px 16px',
+            padding: '8px 12px',
             background: 'transparent',
-            border: '1px solid #535353',
-            borderRadius: '500px',
+            border: '1px solid #333',
+            borderRadius: '6px',
             color: '#B3B3B3',
-            fontSize: '14px',
+            fontSize: '12px',
             cursor: 'pointer',
             transition: 'all 0.2s ease'
           }}
-          onMouseEnter={(e) => {
-            e.currentTarget.style.borderColor = '#FFFFFF';
+          onMouseOver={(e) => {
+            e.currentTarget.style.borderColor = '#666';
             e.currentTarget.style.color = '#FFFFFF';
           }}
-          onMouseLeave={(e) => {
-            e.currentTarget.style.borderColor = '#535353';
+          onMouseOut={(e) => {
+            e.currentTarget.style.borderColor = '#333';
             e.currentTarget.style.color = '#B3B3B3';
           }}
         >
-          Log out
+          Sign out
         </button>
       </div>
-    </div>
+    </nav>
   );
 };
 

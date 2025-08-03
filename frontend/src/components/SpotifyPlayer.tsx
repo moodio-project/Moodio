@@ -1,3 +1,5 @@
+// SpotifyPlayer.tsx - Fixed version with working controls
+
 import React, { useState, useEffect } from 'react';
 
 interface SpotifyPlayerProps {
@@ -10,6 +12,8 @@ const SpotifyPlayer: React.FC<SpotifyPlayerProps> = ({ accessToken, hasPremium }
   const [deviceId, setDeviceId] = useState<string>('');
   const [currentTrack, setCurrentTrack] = useState<any>(null);
   const [isPlaying, setIsPlaying] = useState(false);
+  const [position, setPosition] = useState(0);
+  const [duration, setDuration] = useState(0);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -110,17 +114,22 @@ const SpotifyPlayer: React.FC<SpotifyPlayerProps> = ({ accessToken, hasPremium }
         console.log('📱 Player state: No active session');
         setCurrentTrack(null);
         setIsPlaying(false);
+        setPosition(0);
+        setDuration(0);
         return;
       }
 
       console.log('🎵 Player state changed:', {
         track: state.track_window.current_track?.name,
         paused: state.paused,
-        position: state.position
+        position: state.position,
+        duration: state.duration
       });
 
       setCurrentTrack(state.track_window.current_track);
       setIsPlaying(!state.paused);
+      setPosition(state.position);
+      setDuration(state.duration);
     });
 
     // Connect to the player
@@ -136,7 +145,7 @@ const SpotifyPlayer: React.FC<SpotifyPlayerProps> = ({ accessToken, hasPremium }
     });
   };
 
-  // Play a specific track
+  // Simplified playTrack - ensure songs start from beginning
   const playTrack = async (trackUri: string) => {
     if (!deviceId || !accessToken) {
       console.log('❌ Cannot play track: no device or token');
@@ -146,10 +155,12 @@ const SpotifyPlayer: React.FC<SpotifyPlayerProps> = ({ accessToken, hasPremium }
     console.log(`🎵 Playing track: ${trackUri} on device: ${deviceId}`);
 
     try {
+      // Start playback from the beginning
       const response = await fetch(`https://api.spotify.com/v1/me/player/play?device_id=${deviceId}`, {
         method: 'PUT',
         body: JSON.stringify({
-          uris: [trackUri]
+          uris: [trackUri],
+          position_ms: 0 // Start from beginning
         }),
         headers: {
           'Content-Type': 'application/json',
@@ -158,7 +169,7 @@ const SpotifyPlayer: React.FC<SpotifyPlayerProps> = ({ accessToken, hasPremium }
       });
 
       if (response.ok || response.status === 204) {
-        console.log('✅ Playback started successfully');
+        console.log('✅ Playback started successfully from beginning');
       } else {
         const errorText = await response.text();
         console.error('❌ Playback failed:', response.status, errorText);
@@ -168,29 +179,131 @@ const SpotifyPlayer: React.FC<SpotifyPlayerProps> = ({ accessToken, hasPremium }
     }
   };
 
-  // Player controls
-  const togglePlayback = () => {
-    if (!player) return;
+  // Fixed position updates - only increment when playing, reset properly for new tracks
+  useEffect(() => {
+    if (!isPlaying || !duration) return;
 
-    if (isPlaying) {
-      console.log('⏸️ Pausing playback');
-      player.pause();
-    } else {
-      console.log('▶️ Resuming playback');
-      player.resume();
+    const interval = setInterval(() => {
+      setPosition(prev => {
+        const newPosition = prev + 1000; // Add 1 second
+        return newPosition >= duration ? duration : newPosition;
+      });
+    }, 1000);
+
+    return () => clearInterval(interval);
+  }, [isPlaying, duration]);
+
+  // Simplified sync - only update when track actually changes
+  useEffect(() => {
+    if (!player || !accessToken) return;
+
+    const syncInterval = setInterval(async () => {
+      try {
+        const state = await player.getCurrentState();
+        if (state && state.track_window.current_track) {
+          // Only update if the track ID changed (new song)
+          if (currentTrack?.id !== state.track_window.current_track.id) {
+            console.log('🎵 New track detected, syncing state...');
+            setCurrentTrack(state.track_window.current_track);
+            setIsPlaying(!state.paused);
+            setPosition(state.position); // Use actual position for new tracks
+            setDuration(state.duration);
+          }
+          // Only update play/pause state, not position for same track
+          else if (isPlaying !== !state.paused) {
+            console.log('⏯️ Play/pause state changed');
+            setIsPlaying(!state.paused);
+          }
+        }
+      } catch (error) {
+        // Silently handle sync errors
+      }
+    }, 2000); // Check every 2 seconds
+
+    return () => clearInterval(syncInterval);
+  }, [player, accessToken, currentTrack?.id, isPlaying]);
+
+  // Use ONLY Web API for controls - no SDK controls to avoid the error
+  const togglePlayback = async () => {
+    if (!accessToken) {
+      console.error('❌ No access token available');
+      return;
+    }
+
+    try {
+      const endpoint = isPlaying ? 'pause' : 'play';
+      console.log(isPlaying ? '⏸️ Pausing playback' : '▶️ Resuming playback');
+      
+      const response = await fetch(`https://api.spotify.com/v1/me/player/${endpoint}`, {
+        method: 'PUT',
+        headers: {
+          'Authorization': `Bearer ${accessToken}`,
+          'Content-Type': 'application/json'
+        }
+      });
+      
+      if (response.ok || response.status === 204) {
+        console.log(`✅ ${endpoint} successful`);
+        // Manually update state for immediate feedback
+        setIsPlaying(!isPlaying);
+      } else {
+        console.error(`❌ ${endpoint} failed:`, response.status);
+      }
+    } catch (error) {
+      console.error('❌ Error toggling playback:', error);
     }
   };
 
-  const nextTrack = () => {
-    if (!player) return;
-    console.log('⏭️ Next track');
-    player.nextTrack();
+  const nextTrack = async () => {
+    if (!accessToken) {
+      console.error('❌ No access token available');
+      return;
+    }
+
+    try {
+      console.log('⏭️ Next track');
+      
+      const response = await fetch('https://api.spotify.com/v1/me/player/next', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${accessToken}`
+        }
+      });
+      
+      if (response.ok || response.status === 204) {
+        console.log('✅ Next track successful');
+      } else {
+        console.error('❌ Next track failed:', response.status);
+      }
+    } catch (error) {
+      console.error('❌ Error skipping to next track:', error);
+    }
   };
 
-  const previousTrack = () => {
-    if (!player) return;
-    console.log('⏮️ Previous track');
-    player.previousTrack();
+  const previousTrack = async () => {
+    if (!accessToken) {
+      console.error('❌ No access token available');
+      return;
+    }
+
+    try {
+      console.log('⏮️ Previous track');
+      
+      const response = await fetch('https://api.spotify.com/v1/me/player/previous', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${accessToken}`
+        }
+      });
+      
+      if (response.ok || response.status === 204) {
+        console.log('✅ Previous track successful');
+      } else {
+        console.error('❌ Previous track failed:', response.status);
+      }
+    } catch (error) {
+      console.error('❌ Error skipping to previous track:', error);
+    }
   };
 
   // Expose playTrack function to parent components via window
@@ -199,6 +312,13 @@ const SpotifyPlayer: React.FC<SpotifyPlayerProps> = ({ accessToken, hasPremium }
       (window as any).moodioPlayTrack = playTrack;
     }
   }, [deviceId, accessToken]);
+
+  // Format time helper
+  const formatTime = (ms: number) => {
+    const minutes = Math.floor(ms / 60000);
+    const seconds = Math.floor((ms % 60000) / 1000);
+    return `${minutes}:${seconds.toString().padStart(2, '0')}`;
+  };
 
   // Loading state
   if (loading) {
@@ -326,6 +446,41 @@ const SpotifyPlayer: React.FC<SpotifyPlayerProps> = ({ accessToken, hasPremium }
             </div>
           </div>
 
+          {/* Progress Bar */}
+          {duration > 0 && (
+            <div style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: '12px',
+              marginBottom: '16px'
+            }}>
+              <span style={{ color: '#B3B3B3', fontSize: '12px', minWidth: '35px' }}>
+                {formatTime(position)}
+              </span>
+              <div style={{
+                flex: 1,
+                height: '4px',
+                background: '#333',
+                borderRadius: '2px',
+                position: 'relative'
+              }}>
+                <div style={{
+                  position: 'absolute',
+                  top: 0,
+                  left: 0,
+                  height: '100%',
+                  background: '#22C55E',
+                  borderRadius: '2px',
+                  width: `${(position / duration) * 100}%`,
+                  transition: 'width 0.1s ease'
+                }}></div>
+              </div>
+              <span style={{ color: '#B3B3B3', fontSize: '12px', minWidth: '35px' }}>
+                {formatTime(duration)}
+              </span>
+            </div>
+          )}
+
           {/* Controls */}
           <div style={{ 
             display: 'flex', 
@@ -341,8 +496,12 @@ const SpotifyPlayer: React.FC<SpotifyPlayerProps> = ({ accessToken, hasPremium }
                 color: '#B3B3B3',
                 cursor: 'pointer',
                 fontSize: '20px',
-                padding: '8px'
+                padding: '8px',
+                borderRadius: '4px',
+                transition: 'color 0.2s ease'
               }}
+              onMouseOver={(e) => e.currentTarget.style.color = '#FFFFFF'}
+              onMouseOut={(e) => e.currentTarget.style.color = '#B3B3B3'}
             >
               ⏮️
             </button>
@@ -360,8 +519,11 @@ const SpotifyPlayer: React.FC<SpotifyPlayerProps> = ({ accessToken, hasPremium }
                 fontSize: '18px',
                 display: 'flex',
                 alignItems: 'center',
-                justifyContent: 'center'
+                justifyContent: 'center',
+                transition: 'transform 0.2s ease'
               }}
+              onMouseOver={(e) => e.currentTarget.style.transform = 'scale(1.05)'}
+              onMouseOut={(e) => e.currentTarget.style.transform = 'scale(1)'}
             >
               {isPlaying ? '⏸️' : '▶️'}
             </button>
@@ -374,8 +536,12 @@ const SpotifyPlayer: React.FC<SpotifyPlayerProps> = ({ accessToken, hasPremium }
                 color: '#B3B3B3',
                 cursor: 'pointer',
                 fontSize: '20px',
-                padding: '8px'
+                padding: '8px',
+                borderRadius: '4px',
+                transition: 'color 0.2s ease'
               }}
+              onMouseOver={(e) => e.currentTarget.style.color = '#FFFFFF'}
+              onMouseOut={(e) => e.currentTarget.style.color = '#B3B3B3'}
             >
               ⏭️
             </button>

@@ -1,4 +1,4 @@
-// ===== UPDATE YOUR App.tsx with better debugging =====
+// App.tsx - Fixed with proper LogMoodPage route
 
 import React, { useState, useEffect } from 'react';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
@@ -8,6 +8,7 @@ import Profile from './components/Profile';
 import MoodHistory from './components/MoodHistory';
 import SearchPage from './components/SearchPage';
 import ArtistPage from './components/ArtistPage';
+import LogMoodPage from './components/LogMoodPage'; // ADD THIS IMPORT
 import { auth } from './api';
 
 interface User {
@@ -185,7 +186,7 @@ function App() {
           element={user ? <Navigate to="/dashboard" /> : <Login onLogin={handleLogin} />} 
         />
         
-        {/* Dashboard Route - Now with Spotify token and Premium status */}
+        {/* Dashboard Route */}
         <Route 
           path="/dashboard" 
           element={
@@ -230,6 +231,21 @@ function App() {
           } 
         />
         
+        {/* Log Mood Route - FIXED! */}
+        <Route 
+          path="/mood-log" 
+          element={
+            user ? 
+            <LogMoodPage 
+              user={user} 
+              onLogout={handleLogout}
+              spotifyToken={spotifyToken}
+              hasPremium={hasPremium}
+            /> : 
+            <Navigate to="/login" />
+          } 
+        />
+        
         {/* Profile Route */}
         <Route 
           path="/profile" 
@@ -240,21 +256,6 @@ function App() {
         <Route 
           path="/mood-history" 
           element={user ? <MoodHistory user={user} onLogout={handleLogout} /> : <Navigate to="/login" />} 
-        />
-        
-        {/* Mood Log Route */}
-        <Route 
-          path="/mood-log" 
-          element={
-            user ? 
-            <Dashboard 
-              user={user} 
-              onLogout={handleLogout} 
-              spotifyToken={spotifyToken}
-              hasPremium={hasPremium}
-            /> : 
-            <Navigate to="/login" />
-          } 
         />
         
         {/* Default Route */}
