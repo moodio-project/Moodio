@@ -54,14 +54,31 @@ export const moods = {
   }
 };
 
+// Genius API functions - NEW!
+export const genius = {
+  // Get song lyrics from Genius
+  getSongLyrics: async (geniusSongId: number) => {
+    const response = await api.get(`/genius/song/${geniusSongId}/lyrics`);
+    return response.data;
+  },
+
+  // Search Genius for artists or songs
+  search: async (query: string, type: 'artist' | 'song' = 'song') => {
+    const response = await api.get(`/genius/search?q=${encodeURIComponent(query)}&type=${type}`);
+    return response.data;
+  }
+};
+
 // Spotify functions
 export const spotify = {
   getTopTracks: async () => {
     const response = await api.get('/spotify/top-tracks');
     return response.data;
   },
+  
+  // Enhanced artist data with Genius integration - UPDATED!
   getEnhancedArtist: async (artistId: string) => {
-    const response = await api.get(`/artists/${artistId}/enhanced`);
+    const response = await api.get(`/spotify/artist/${artistId}/enhanced`);
     return response.data;
   },
   
@@ -74,14 +91,17 @@ export const spotify = {
     const response = await api.get(`/spotify/search?q=${encodeURIComponent(query)}&type=${type}&limit=${limit}`);
     return response.data;
   },
+  
   getArtist: async (artistId: string) => {
     const response = await api.get(`/spotify/artist/${artistId}`);
     return response.data;
   },
+  
   getArtistTopTracks: async (artistId: string) => {
     const response = await api.get(`/spotify/artist/${artistId}/top-tracks`);
     return response.data;
   },
+  
   getAudioFeatures: async (trackId: string) => {
     const response = await api.get(`/spotify/audio-features/${trackId}`);
     return response.data;
@@ -89,6 +109,19 @@ export const spotify = {
   
   getRecommendations: async (mood: string) => {
     const response = await api.get(`/spotify/recommendations/${mood}`);
+    return response.data;
+  }
+};
+
+// AI functions
+export const ai = {
+  getMoodRecommendations: async () => {
+    const response = await api.post('/ai/mood-recommendations', {}); // Add empty body
+    return response.data;
+  },
+
+  getMoodInsights: async () => {
+    const response = await api.get('/ai/mood-insights');
     return response.data;
   }
 };

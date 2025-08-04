@@ -1,10 +1,8 @@
-// ===== UPDATE YOUR Dashboard.tsx component signature and SpotifyPlayer usage =====
-
 import React, { useState, useEffect } from 'react';
 import { moods } from '../api';
 import Navigation from './Navigation';
 import SpotifyPlayer from './SpotifyPlayer';
-import { spotify } from '../api';
+import SpotifyMoodRecommendations from './SpotifyMoodRecommendations';
 
 interface User {
   id: number;
@@ -20,27 +18,22 @@ interface Mood {
   created_at: string;
 }
 
-// ✅ UPDATE THIS INTERFACE
 interface DashboardProps {
   user: User;
   onLogout: () => void;
-  spotifyToken?: string | null;  // Add this prop
-  hasPremium?: boolean;          // Add this prop
+  spotifyToken?: string | null;
+  hasPremium?: boolean;
 }
 
-// ✅ UPDATE THE COMPONENT SIGNATURE
 const Dashboard: React.FC<DashboardProps> = ({ user, onLogout, spotifyToken, hasPremium }) => {
   const [userMoods, setUserMoods] = useState<Mood[]>([]);
   const [showMoodForm, setShowMoodForm] = useState(false);
-  const [recommendedTracks, setRecommendedTracks] = useState<any[]>([]);
-  const [recommendationData, setRecommendationData] = useState<any>(null);
   const [newMood, setNewMood] = useState({
     mood: 'happy',
     intensity: 5,
     note: ''
   });
 
-  // ✅ ADD DEBUG LOGGING
   useEffect(() => {
     console.log('🎯 Dashboard received props:', {
       hasUser: !!user,
@@ -55,36 +48,12 @@ const Dashboard: React.FC<DashboardProps> = ({ user, onLogout, spotifyToken, has
     loadMoods();
   }, []);
 
-  useEffect(() => {
-    if (userMoods.length > 0) {
-      loadEnhancedRecommendations(userMoods[0].mood);
-    }
-  }, [userMoods]);
-
   const loadMoods = async () => {
     try {
-      const response: any = await moods.getAll();
-      setUserMoods(response.moods);
+      const response = await moods.getAll() as any;
+      setUserMoods(response.moods || []);
     } catch (error) {
       console.error('Failed to load moods:', error);
-    }
-  };
-
-  const loadEnhancedRecommendations = async (mood: string) => {
-    try {
-      // Try enhanced recommendations first
-      const response: any = await spotify.getEnhancedRecommendations(mood);
-      setRecommendedTracks(response.recommendations || []);
-      setRecommendationData(response);
-    } catch (error) {
-      console.error('Failed to load enhanced recommendations:', error);
-      // Fallback to basic recommendations
-      try {
-        const fallbackResponse: any = await spotify.getRecommendations(mood);
-        setRecommendedTracks(fallbackResponse.tracks || []);
-      } catch (fallbackError) {
-        console.error('Fallback recommendations also failed:', fallbackError);
-      }
     }
   };
 
@@ -163,6 +132,7 @@ const Dashboard: React.FC<DashboardProps> = ({ user, onLogout, spotifyToken, has
         padding: '32px',
         minHeight: '100vh'
       }}>
+
         {/* Header */}
         <div style={{ marginBottom: '32px' }}>
           <h1 style={{ color: 'white', fontSize: '32px', margin: '0 0 8px 0' }}>
@@ -172,28 +142,11 @@ const Dashboard: React.FC<DashboardProps> = ({ user, onLogout, spotifyToken, has
             How are you feeling today?
           </p>
         </div>
-
-        {/* ✅ DEBUG INFO SECTION - Remove this after testing */}
-        <div style={{ 
-          background: '#282828', 
-          padding: '16px', 
-          borderRadius: '8px', 
-          marginBottom: '32px',
-          fontSize: '12px',
-          color: '#B3B3B3'
-        }}>
-          <h3 style={{ color: 'white', margin: '0 0 8px 0' }}>Debug Info:</h3>
-          <p>Spotify Token: {spotifyToken ? 'Present (' + spotifyToken.length + ' chars)' : 'Missing'}</p>
-          <p>Has Premium: {hasPremium ? 'Yes' : 'No'}</p>
-          <p>Token Preview: {spotifyToken ? spotifyToken.substring(0, 30) + '...' : 'None'}</p>
-          <p>Local Storage Token: {localStorage.getItem('spotify_token') ? 'Present' : 'Missing'}</p>
-          <p>Local Storage Premium: {localStorage.getItem('has_premium')}</p>
-        </div>
-
-        {/* Main Content - ✅ PASS ALL PROPS TO SPOTIFY PLAYER */}
+        
+        {/* Main Content Grid */}
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '32px', marginBottom: '32px' }}>
           
-          {/* ✅ UPDATED SPOTIFY PLAYER WITH ALL PROPS */}
+          {/* Spotify Player */}
           <SpotifyPlayer 
             accessToken={spotifyToken} 
             hasPremium={hasPremium}
@@ -273,51 +226,9 @@ const Dashboard: React.FC<DashboardProps> = ({ user, onLogout, spotifyToken, has
           </div>
         </div>
 
-        {/* Rest of your dashboard content stays the same... */}
-        {/* Recent Moods */}
-        <div className="card">
-          <h2 style={{ color: 'white', marginBottom: '24px' }}>Recent Moods</h2>
-          
-          {userMoods.length === 0 ? (
-            <p style={{ color: '#B3B3B3', textAlign: 'center', padding: '32px' }}>
-              No moods logged yet. Start tracking your emotions! 🎵
-            </p>
-          ) : (
-            <div style={{ maxHeight: '400px', overflowY: 'auto' }}>
-              {userMoods.slice(0, 5).map((mood) => (
-                <div 
-                  key={mood.id}
-                  style={{
-                    background: '#181818',
-                    borderRadius: '8px',
-                    padding: '16px',
-                    marginBottom: '12px',
-                    border: '1px solid #282828'
-                  }}
-                >
-                  <div style={{ display: 'flex', alignItems: 'center', marginBottom: '8px' }}>
-                    <span style={{ fontSize: '24px', marginRight: '12px' }}>
-                      {moodEmojis[mood.mood] || '😊'}
-                    </span>
-                    <div>
-                      <h4 style={{ color: 'white', margin: 0, textTransform: 'capitalize' }}>
-                        {mood.mood}
-                      </h4>
-                      <p style={{ color: '#B3B3B3', margin: '4px 0 0 0', fontSize: '14px' }}>
-                        Intensity: {mood.intensity}/10 • {new Date(mood.created_at).toLocaleDateString()}
-                      </p>
-                    </div>
-                  </div>
-                  {mood.note && (
-                    <p style={{ color: '#B3B3B3', margin: 0, fontSize: '14px' }}>
-                      "{mood.note}"
-                    </p>
-                  )}
-                </div>
-              ))}
-            </div>
-          )}
-        </div>
+        {/* Spotify Recommendations - Replacing Recent Moods */}
+        <SpotifyMoodRecommendations user={user} />
+
       </div>
     </div>
   );

@@ -8,6 +8,8 @@ interface SpotifyPlayerProps {
 }
 
 const SpotifyPlayer: React.FC<SpotifyPlayerProps> = ({ accessToken, hasPremium }) => {
+  console.log('🎵 SpotifyPlayer component mounted!', { accessToken: !!accessToken, hasPremium });
+  
   const [player, setPlayer] = useState<any>(null);
   const [deviceId, setDeviceId] = useState<string>('');
   const [currentTrack, setCurrentTrack] = useState<any>(null);
@@ -179,6 +181,15 @@ const SpotifyPlayer: React.FC<SpotifyPlayerProps> = ({ accessToken, hasPremium }
     }
   };
 
+  // Add this single, clean useEffect after your playTrack function
+// Replace any existing moodioPlayTrack useEffects with ONLY this:
+useEffect(() => {
+  if (deviceId && accessToken && playTrack) {
+    (window as any).moodioPlayTrack = playTrack;
+    console.log('✅ moodioPlayTrack attached:', typeof (window as any).moodioPlayTrack);
+  }
+}, [deviceId, accessToken]); // Remove playTrack from dependencies
+
   // Fixed position updates - only increment when playing, reset properly for new tracks
   useEffect(() => {
     if (!isPlaying || !duration) return;
@@ -305,13 +316,6 @@ const SpotifyPlayer: React.FC<SpotifyPlayerProps> = ({ accessToken, hasPremium }
       console.error('❌ Error skipping to previous track:', error);
     }
   };
-
-  // Expose playTrack function to parent components via window
-  React.useEffect(() => {
-    if (deviceId && accessToken) {
-      (window as any).moodioPlayTrack = playTrack;
-    }
-  }, [deviceId, accessToken]);
 
   // Format time helper
   const formatTime = (ms: number) => {

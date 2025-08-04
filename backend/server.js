@@ -4,6 +4,7 @@ const sqlite3 = require('sqlite3').verbose();
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const SpotifyWebApi = require('spotify-web-api-node');
+const Genius = require('genius-lyrics').Client;
 require('dotenv').config();
 
 const app = express();
@@ -12,19 +13,21 @@ const PORT = process.env.PORT || 3001;
 // Initialize SQLite database
 const db = new sqlite3.Database('./database.sqlite');
 
-// Add after your existing Spotify API setup
-const geniusConfig = {
-  accessToken: process.env.GENIUS_API_KEY, // You already have this
-  baseUrl: 'https://api.genius.com'
-};
+const userTokens = new Map();
+// Initialize Genius API
+const genius = new Genius(process.env.GENIUS_API_KEY);
 
-// Add the helper functions here
-async function makeGeniusRequest(endpoint) {
-  // ... the code from the artifact
-}
-
-function calculateSimilarity(spotifyName, geniusName) {
-  // ... the code from the artifact  
+// Helper function for mood descriptions
+function getMoodDescription(mood, valence, energy) {
+  const descriptions = {
+    'energetic': 'High-energy, uplifting music that gets you moving',
+    'happy': 'Positive, feel-good vibes that brighten your day', 
+    'melancholy': 'Introspective, emotional music for reflective moments',
+    'intense': 'Powerful, dramatic music with strong emotional impact',
+    'contemplative': 'Thoughtful, deeper music for quiet reflection',
+    'balanced': 'A versatile mix of emotions and energy levels'
+  };
+  return descriptions[mood] || 'A unique blend of musical emotions';
 }
 
 // Create tables if they don't exist
@@ -40,6 +43,7 @@ db.serialize(() => {
     avatar_url TEXT,
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP
   )`);
+
 
   // Moods table
   db.run(`CREATE TABLE IF NOT EXISTS moods (
@@ -384,149 +388,6 @@ app.get('/auth/spotify/callback', async (req, res) => {
   }
 });
 
-// ===== ADD TO YOUR BACKEND server.js =====
-
-// Store user Spotify tokens (you'll need this for playback)
-const userTokens = new Map(); // In production, use a proper database
-
-// ===== UPDATE YOUR BACKEND server.js Spotify OAuth callback =====
-
-// Replace your existing Spotify OAuth callback with this fixed version:
-app.get('/auth/spotify/callback', async (req, res) => {
-  const { code, error } = req.query;
-  
-  console.log('📝 Spotify callback received:', { code: !!code, error });
-  
-  if (error) {
-    console.error('❌ Spotify OAuth error:', error);
-    return res.redirect('http://localhost:3000/login?error=spotify_auth_failed');
-  }
-  
-  try {
-    const data = await spotifyApi.authorizationCodeGrant(code);
-    const { access_token, refresh_token } = data.body;
-    
-    console.log('✅ Got Spotify tokens');
-    
-    // Get user profile from Spotify with the new tokens
-    const userSpotifyApi = new SpotifyWebApi({
-      clientId: process.env.SPOTIFY_CLIENT_ID,
-      clientSecret: process.env.SPOTIFY_CLIENT_SECRET,
-      redirectUri: process.env.SPOTIFY_REDIRECT_URI
-    });
-    
-    userSpotifyApi.setAccessToken(access_token);
-    userSpotifyApi.setRefreshToken(refresh_token);
-    
-    const userProfile = await userSpotifyApi.getMe();
-    const spotifyUser = userProfile.body;
-    
-    console.log('👤 Spotify user data:', {
-      id: spotifyUser.id,
-      display_name: spotifyUser.display_name,
-      email: spotifyUser.email,
-      product: spotifyUser.product, // This is the key - should be 'premium'
-      country: spotifyUser.country
-    });
-    
-    // Check Premium status explicitly
-    const isPremium = spotifyUser.product === 'premium';
-    console.log('🎵 Premium status:', isPremium ? 'YES' : 'NO');
-    
-    // Check if user exists in our database
-    db.get('SELECT * FROM users WHERE spotify_id = ?', [spotifyUser.id], async (err, existingUser) => {
-      if (err) {
-        console.error('❌ Database SELECT error:', err);
-        return res.redirect('http://localhost:3000/login?error=database_error');
-      }
-      
-      if (existingUser) {
-        console.log('✅ User exists, logging in');
-        
-        // Store user's Spotify tokens for playback
-        userTokens.set(existingUser.id, {
-          access_token,
-          refresh_token,
-          product: spotifyUser.product,
-          expires_at: Date.now() + (data.body.expires_in * 1000) // Add expiration
-        });
-        
-        // User exists, generate JWT
-        const token = jwt.sign(
-          { userId: existingUser.id, email: existingUser.email },
-          process.env.JWT_SECRET || 'secret',
-          { expiresIn: '7d' }
-        );
-        
-        // Redirect to frontend with all data
-        const userData = {
-          id: existingUser.id,
-          username: existingUser.display_name || existingUser.username,
-          email: existingUser.email,
-          spotify_token: access_token,
-          has_premium: isPremium, // Explicitly set this
-          spotify_product: spotifyUser.product // Debug info
-        };
-        
-        console.log('🚀 Redirecting with user data:', userData);
-        
-        res.redirect(`http://localhost:3000?token=${token}&user=${encodeURIComponent(JSON.stringify(userData))}`);
-      } else {
-        console.log('👤 Creating new user for:', spotifyUser.display_name);
-        // Create new user
-        db.run(
-          'INSERT INTO users (spotify_id, display_name, username, email, avatar_url) VALUES (?, ?, ?, ?, ?)',
-          [
-            spotifyUser.id, 
-            spotifyUser.display_name, 
-            spotifyUser.display_name, 
-            spotifyUser.email, 
-            spotifyUser.images?.[0]?.url || null
-          ],
-          function(err) {
-            if (err) {
-              console.error('❌ Database INSERT error:', err);
-              return res.redirect('http://localhost:3000/login?error=database_error');
-            }
-            
-            console.log('✅ User created successfully with ID:', this.lastID);
-            
-            // Store user's Spotify tokens for playback
-            userTokens.set(this.lastID, {
-              access_token,
-              refresh_token,
-              product: spotifyUser.product,
-              expires_at: Date.now() + (data.body.expires_in * 1000)
-            });
-            
-            const token = jwt.sign(
-              { userId: this.lastID, email: spotifyUser.email },
-              process.env.JWT_SECRET || 'secret',
-              { expiresIn: '7d' }
-            );
-            
-            const userData = {
-              id: this.lastID,
-              username: spotifyUser.display_name,
-              email: spotifyUser.email,
-              spotify_token: access_token,
-              has_premium: isPremium, // Explicitly set this
-              spotify_product: spotifyUser.product // Debug info
-            };
-            
-            console.log('🚀 Redirecting with new user data:', userData);
-            
-            res.redirect(`http://localhost:3000?token=${token}&user=${encodeURIComponent(JSON.stringify(userData))}`);
-          }
-        );
-      }
-    });
-  } catch (error) {
-    console.error('❌ Spotify OAuth process error:', error);
-    res.redirect('http://localhost:3000/login?error=spotify_auth_failed');
-  }
-});
-
 // ===== ADD DEBUG ROUTE to check your Premium status =====
 
 app.get('/debug/spotify-user', authenticateToken, async (req, res) => {
@@ -557,112 +418,6 @@ app.get('/debug/spotify-user', authenticateToken, async (req, res) => {
     }
   } catch (error) {
     res.json({ error: 'Error checking Spotify user', details: error.message });
-  }
-});
-
-// ===== UPDATE the /api/spotify/me route =====
-
-// ===== ADD/UPDATE THIS ROUTE IN YOUR server.js =====
-
-// Fix the /api/spotify/me route - make sure it's properly defined
-app.get('/api/spotify/me', authenticateToken, async (req, res) => {
-  console.log('🔍 /api/spotify/me called for user:', req.user.userId);
-  
-  const userSpotifyData = userTokens.get(req.user.userId);
-  
-  if (!userSpotifyData) {
-    console.log('❌ No Spotify token found for user:', req.user.userId);
-    console.log('📊 Available user tokens:', Array.from(userTokens.keys()));
-    return res.status(401).json({ error: 'No Spotify token found' });
-  }
-  
-  console.log('✅ Found user Spotify data:', {
-    hasAccessToken: !!userSpotifyData.access_token,
-    hasRefreshToken: !!userSpotifyData.refresh_token,
-    product: userSpotifyData.product,
-    tokenPreview: userSpotifyData.access_token ? userSpotifyData.access_token.substring(0, 20) + '...' : 'None'
-  });
-  
-  try {
-    // Get fresh user data from Spotify to confirm Premium status
-    const response = await fetch('https://api.spotify.com/v1/me', {
-      headers: {
-        'Authorization': `Bearer ${userSpotifyData.access_token}`,
-        'Content-Type': 'application/json'
-      }
-    });
-    
-    console.log('🎵 Spotify API response status:', response.status);
-    
-    if (response.ok) {
-      const userData = await response.json();
-      console.log('✅ Spotify user data:', {
-        product: userData.product,
-        country: userData.country,
-        display_name: userData.display_name
-      });
-      
-      res.json({
-        product: userData.product,
-        access_token: userSpotifyData.access_token,
-        is_premium: userData.product === 'premium'
-      });
-    } else if (response.status === 401) {
-      console.log('🔄 Token expired, attempting refresh...');
-      
-      // Token might be expired, try to refresh
-      if (userSpotifyData.refresh_token) {
-        try {
-          const refreshSpotifyApi = new SpotifyWebApi({
-            clientId: process.env.SPOTIFY_CLIENT_ID,
-            clientSecret: process.env.SPOTIFY_CLIENT_SECRET,
-            redirectUri: process.env.SPOTIFY_REDIRECT_URI
-          });
-          
-          refreshSpotifyApi.setRefreshToken(userSpotifyData.refresh_token);
-          const refreshData = await refreshSpotifyApi.refreshAccessToken();
-          const { access_token } = refreshData.body;
-          
-          console.log('✅ Token refreshed successfully');
-          
-          // Update stored token
-          userSpotifyData.access_token = access_token;
-          userTokens.set(req.user.userId, userSpotifyData);
-          
-          // Try the request again with new token
-          const retryResponse = await fetch('https://api.spotify.com/v1/me', {
-            headers: {
-              'Authorization': `Bearer ${access_token}`,
-              'Content-Type': 'application/json'
-            }
-          });
-          
-          if (retryResponse.ok) {
-            const userData = await retryResponse.json();
-            res.json({
-              product: userData.product,
-              access_token: access_token,
-              is_premium: userData.product === 'premium'
-            });
-          } else {
-            throw new Error(`Retry failed with status ${retryResponse.status}`);
-          }
-          
-        } catch (refreshError) {
-          console.error('❌ Token refresh failed:', refreshError);
-          res.status(401).json({ error: 'Token expired and refresh failed' });
-        }
-      } else {
-        console.log('❌ No refresh token available');
-        res.status(401).json({ error: 'Token expired, please re-authenticate' });
-      }
-    } else {
-      console.error('❌ Spotify API error:', response.status, await response.text());
-      res.status(response.status).json({ error: 'Spotify API error' });
-    }
-  } catch (error) {
-    console.error('❌ Error fetching user data:', error);
-    res.status(500).json({ error: 'Error fetching user data', details: error.message });
   }
 });
 
@@ -876,18 +631,6 @@ app.get('/api/auth/me', authenticateToken, (req, res) => {
   });
 });
 
-// ===== ENHANCED ARTIST & RECOMMENDATION ROUTES =====
-
-// Enhanced artist route with Genius bio integration
-app.get('/api/artists/:id/enhanced', async (req, res) => {
-  // ... the enhanced artist route code
-});
-
-// Updated recommendations with artist mood insights  
-app.get('/api/recommendations/:mood/enhanced', async (req, res) => {
-  // ... the enhanced recommendations code
-});
-
 // ===== REAL SPOTIFY API ROUTES =====
 
 // REAL Spotify search
@@ -929,14 +672,42 @@ app.get('/api/spotify/search', authenticateToken, async (req, res) => {
 });
 
 // Get REAL artist details
-app.get('/api/spotify/artist/:id', authenticateToken, async (req, res) => {
+app.get('/api/spotify/artist/:id/enhanced', authenticateToken, async (req, res) => {
   try {
-    const { id } = req.params;
-    const artist = await spotifyApi.getArtist(id);
-    res.json(artist.body);
+    const { id: artistId } = req.params;
+    const userSpotifyData = userTokens.get(req.user.userId);
+
+    if (!userSpotifyData) {
+      return res.status(401).json({ error: 'No Spotify token available' });
+    }
+
+    // Get basic Spotify artist data
+    const [artistResponse, topTracksResponse] = await Promise.all([
+      fetch(`https://api.spotify.com/v1/artists/${artistId}`, {
+        headers: { 'Authorization': `Bearer ${userSpotifyData.access_token}` }
+      }),
+      fetch(`https://api.spotify.com/v1/artists/${artistId}/top-tracks?market=US`, {
+        headers: { 'Authorization': `Bearer ${userSpotifyData.access_token}` }
+      })
+    ]);
+
+    const spotifyArtist = await artistResponse.json();
+    const topTracksData = await topTracksResponse.json();
+
+  
+    // Temporarily disable Genius to avoid errors
+    let geniusData = null;
+    console.log('🔍 Genius integration temporarily disabled for stability');
+
+    res.json({
+      spotify: { ...spotifyArtist, top_tracks: topTracksData.tracks || [] },
+      genius: geniusData,
+      mood_analysis: null
+    });
+
   } catch (error) {
-    console.error('Get artist error:', error);
-    res.status(500).json({ error: 'Failed to fetch artist' });
+    console.error('❌ Enhanced artist fetch error:', error);
+    res.status(500).json({ error: 'Failed to fetch enhanced artist data' });
   }
 });
 
@@ -1023,6 +794,162 @@ app.get('/api/spotify/recommendations/:mood', authenticateToken, async (req, res
   } catch (error) {
     console.error('Get recommendations error:', error);
     res.status(500).json({ error: 'Failed to fetch recommendations' });
+  }
+});
+
+// Add this to your server.js after your existing routes
+
+// OpenAI Integration
+const { OpenAI } = require('openai');
+const openai = new OpenAI({
+  apiKey: process.env.OPENAI_API_KEY
+});
+
+// AI-powered mood analysis and recommendations
+app.post('/api/ai/mood-recommendations', authenticateToken, async (req, res) => {
+  try {
+    const userId = req.user.userId;
+    
+    // Get user's recent mood logs
+    db.all(
+      'SELECT mood, intensity, note, created_at FROM moods WHERE user_id = ? ORDER BY created_at DESC LIMIT 10',
+      [userId],
+      async (err, moods) => {
+        if (err) {
+          return res.status(500).json({ error: 'Failed to fetch mood data' });
+        }
+
+        if (!moods || moods.length === 0) {
+          return res.json({
+            recommendations: ["Start logging your moods to get personalized recommendations!"],
+            insights: "No mood data available yet.",
+            suggested_genres: ["pop", "indie", "chill"]
+          });
+        }
+
+        try {
+          // Create a mood summary for OpenAI
+          const moodSummary = moods.map(m => 
+            `${m.mood} (intensity: ${m.intensity}/10) - ${m.note || 'no note'}`
+          ).join('\n');
+
+          const prompt = `
+Based on these recent mood logs from a music listener:
+
+${moodSummary}
+
+Please provide personalized music recommendations in this exact JSON format:
+{
+  "insights": "A 2-3 sentence analysis of their mood patterns",
+  "recommendations": [
+    "3-4 specific actionable recommendations for music to improve their mood or match their current state"
+  ],
+  "suggested_genres": ["3-4 music genres that would work well"],
+  "playlist_theme": "A creative name for a playlist based on their mood pattern"
+}
+
+Focus on being helpful, empathetic, and specific about how music can support their emotional wellbeing.`;
+
+          const completion = await openai.chat.completions.create({
+            model: "gpt-3.5-turbo",
+            messages: [{ role: "user", content: prompt }],
+            max_tokens: 500,
+            temperature: 0.7
+          });
+
+          const aiResponse = completion.choices[0].message.content;
+          
+          try {
+            const parsedResponse = JSON.parse(aiResponse);
+            res.json(parsedResponse);
+          } catch (parseError) {
+            // Fallback if JSON parsing fails
+            res.json({
+              insights: aiResponse,
+              recommendations: ["Try listening to music that matches your current mood"],
+              suggested_genres: ["pop", "indie", "alternative"],
+              playlist_theme: "Your Mood Mix"
+            });
+          }
+
+        } catch (aiError) {
+          console.error('OpenAI API error:', aiError);
+          res.status(500).json({ error: 'Failed to generate AI recommendations' });
+        }
+      }
+    );
+
+  } catch (error) {
+    console.error('Mood recommendations error:', error);
+    res.status(500).json({ error: 'Failed to process request' });
+  }
+});
+
+// AI mood insights for dashboard
+app.get('/api/ai/mood-insights', authenticateToken, async (req, res) => {
+  try {
+    const userId = req.user.userId;
+    
+    db.all(
+      'SELECT mood, intensity, created_at FROM moods WHERE user_id = ? ORDER BY created_at DESC LIMIT 20',
+      [userId],
+      async (err, moods) => {
+        if (err || !moods.length) {
+          return res.json({ insight: "Start logging moods to see AI insights!" });
+        }
+
+        const moodCounts = {};
+        let totalIntensity = 0;
+
+        moods.forEach(mood => {
+          moodCounts[mood.mood] = (moodCounts[mood.mood] || 0) + 1;
+          totalIntensity += mood.intensity;
+        });
+
+        const dominantMood = Object.keys(moodCounts).reduce((a, b) => 
+          moodCounts[a] > moodCounts[b] ? a : b
+        );
+        
+        const averageIntensity = (totalIntensity / moods.length).toFixed(1);
+
+        try {
+          const prompt = `
+Based on recent mood data:
+- Most frequent mood: ${dominantMood}  
+- Average intensity: ${averageIntensity}/10
+- Total mood logs: ${moods.length}
+- Recent moods: ${moods.slice(0, 5).map(m => m.mood).join(', ')}
+
+Provide a brief, encouraging insight (1-2 sentences) about their emotional patterns and how music might help.`;
+
+          const completion = await openai.chat.completions.create({
+            model: "gpt-3.5-turbo",
+            messages: [{ role: "user", content: prompt }],
+            max_tokens: 100,
+            temperature: 0.8
+          });
+
+          res.json({
+            insight: completion.choices[0].message.content.trim(),
+            dominantMood,
+            averageIntensity,
+            totalLogs: moods.length
+          });
+
+        } catch (aiError) {
+          res.json({
+            insight: `You've been feeling mostly ${dominantMood} lately. Music can be a great way to support your emotional journey!`,
+            dominantMood,
+            averageIntensity,
+            totalLogs: moods.length
+          });
+        }
+      }
+    );
+
+  } catch (error) {
+    console.error('Mood insights error:', error);
+    res.status(500).json({ error: 'Failed to get insights' });
   }
 });
 

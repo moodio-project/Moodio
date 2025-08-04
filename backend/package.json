@@ -17,8 +17,10 @@
     "cors": "^2.8.5",
     "dotenv": "^17.2.1",
     "express": "^5.1.0",
+    "genius-lyrics": "^4.4.7",
     "jsonwebtoken": "^9.0.2",
     "node-fetch": "^2.7.0",
+    "openai": "^5.11.0",
     "spotify-web-api-node": "^5.0.2",
     "sqlite3": "^5.1.7"
   },

@@ -3,6 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import Navigation from './Navigation';
 import { spotify } from '../api';
 
+
 interface User {
   id: number;
   username: string;
@@ -34,29 +35,30 @@ const ArtistPage: React.FC<ArtistPageProps> = ({ user, onLogout }) => {
 
   const loadEnhancedArtistData = async (id: string) => {
     setLoading(true);
+    console.log('🔍 Loading artist data for ID:', id);
+    
     try {
-      // Try enhanced data first
-      const enhancedData: any = await spotify.getEnhancedArtist(id);
+      // Use the existing enhanced route from server.js
+      const response = await fetch(`http://localhost:3001/api/spotify/artist/${id}/enhanced`, {
+        headers: {
+          'Authorization': `Bearer ${localStorage.getItem('token')}`
+        }
+      });
       
-      setArtist(enhancedData.spotify);
-      setTopTracks(enhancedData.spotify.top_tracks || []);
-      setGeniusData(enhancedData.genius);
-      setMoodAnalysis(enhancedData.mood_analysis);
-    } catch (error) {
-      console.error('Enhanced data failed, falling back to basic data:', error);
-      
-      // Fallback to basic Spotify data
-      try {
-        const [artistData, topTracksData] = await Promise.all([
-          spotify.getArtist(id),
-          spotify.getArtistTopTracks(id)
-        ]);
-
-        setArtist(artistData as any);
-        setTopTracks((topTracksData as any).tracks || []);
-      } catch (fallbackError) {
-        console.error('Failed to load artist data:', fallbackError);
+      if (response.ok) {
+        const data = await response.json();
+        console.log('✅ Artist data received:', data);
+        
+        setArtist(data.spotify);
+        setTopTracks(data.spotify.top_tracks || []);
+        setGeniusData(data.genius);
+        setMoodAnalysis(data.mood_analysis);
+      } else {
+        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
       }
+      
+    } catch (error) {
+      console.error('❌ Failed to load artist data:', error);
     } finally {
       setLoading(false);
     }
@@ -472,6 +474,18 @@ const ArtistPage: React.FC<ArtistPageProps> = ({ user, onLogout }) => {
                       </p>
 
                       <button
+                        onClick={(e) => {
+                          e.stopPropagation(); // Prevent parent div from handling the click
+                          console.log('🔍 Play button clicked!');
+                          
+                          if ((window as any).moodioPlayTrack) {
+                            console.log('🎵 Calling moodioPlayTrack with:', track.uri);
+                            (window as any).moodioPlayTrack(track.uri);
+                            setPlayingTrack(track.id);
+                          } else {
+                            console.error('❌ moodioPlayTrack function not available');
+                          }
+                        }}
                         style={{
                           background: playingTrack === track.id ? '#1DB954' : 'rgba(255, 255, 255, 0.1)',
                           border: 'none',
