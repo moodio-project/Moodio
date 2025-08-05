@@ -980,15 +980,11 @@ app.post('/api/moods', authenticateToken, (req, res) => {
     function(err) {
       if (err) return res.status(500).json({ error: 'Failed to save mood' });
       
-      // Get the actual record with correct timestamp
-      db.get(
-        'SELECT * FROM moods WHERE id = ?',
-        [this.lastID],
-        (err, row) => {
-          if (err) return res.status(500).json({ error: 'Failed to retrieve mood' });
-          res.status(201).json({ mood: row });
-        }
-      );
+      // Get the actual record
+      db.get('SELECT * FROM moods WHERE id = ?', [this.lastID], (err, row) => {
+        if (err) return res.status(500).json({ error: 'Failed to retrieve mood' });
+        res.status(201).json({ mood: row });
+      });
     }
   );
 });
