@@ -138,11 +138,11 @@ const Dashboard: React.FC<DashboardProps> = ({ user, onLogout, spotifyToken, has
           <h1 style={{ color: 'white', fontSize: '32px', margin: '0 0 8px 0' }}>
             Welcome back, {user.username}! 👋
           </h1>
-          <p style={{ color: '#B3B3B3', margin: 0 }}>
-            How are you feeling today?
+          <p style={{ color: '#B3B3B3', margin: 0, fontSize: '18px' }}>
+          How are you feeling today?
           </p>
         </div>
-        
+
         {/* Main Content Grid */}
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '32px', marginBottom: '32px' }}>
           

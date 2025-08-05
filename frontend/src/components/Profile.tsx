@@ -62,17 +62,17 @@ const Profile: React.FC<ProfileProps> = ({ user, onLogout }) => {
       <Navigation user={user} currentPage="profile" onLogout={onLogout} />
       
       <div style={{ 
-        marginLeft: '240px', 
-        flex: 1, 
-        padding: '32px',
-        maxWidth: '800px',
-        margin: '0 auto 0 240px'
+         marginLeft: '240px', 
+         flex: 1, 
+         padding: '0',  // Remove padding from outer container
+         background: '#121212'
       }}>
         <div style={{
           background: '#1E1E1E',
           borderRadius: '12px',
           padding: '32px',
-          boxShadow: '0 4px 20px rgba(0, 0, 0, 0.3)'
+          boxShadow: '0 4px 20px rgba(0, 0, 0, 0.3)',
+          height: 'calc(100vh - 64px)'
         }}>
           <h1 style={{
             color: '#22C55E',
@@ -347,36 +347,15 @@ const Profile: React.FC<ProfileProps> = ({ user, onLogout }) => {
             borderRadius: '12px',
             padding: '24px'
           }}>
-            <h3 style={{
+            <h3 style={{  
               color: '#FFFFFF',
               fontSize: '20px',
-              marginBottom: '16px'
+              marginBottom: '16px',
+              textAlign: 'center'
             }}>
               Account Actions
             </h3>
-            <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap' }}>
-              <button
-                style={{
-                  background: 'transparent',
-                  border: '1px solid #666',
-                  borderRadius: '6px',
-                  padding: '12px 24px',
-                  color: '#B3B3B3',
-                  fontSize: '14px',
-                  cursor: 'pointer',
-                  transition: 'all 0.2s ease'
-                }}
-                onMouseOver={(e) => {
-                  e.currentTarget.style.borderColor = '#22C55E';
-                  e.currentTarget.style.color = '#22C55E';
-                }}
-                onMouseOut={(e) => {
-                  e.currentTarget.style.borderColor = '#666';
-                  e.currentTarget.style.color = '#B3B3B3';
-                }}
-              >
-                Export My Data
-              </button>
+            <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap', justifyContent: 'center' }}>
               <button
                 onClick={onLogout}
                 style={{
