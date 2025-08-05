@@ -107,33 +107,36 @@ const SpotifyMoodRecommendations: React.FC<SpotifyMoodRecommendationsProps> = ({
     try {
       console.log('🎵 Getting recommendations for mood:', mood);
       
-      // First try the mood-based endpoint
-      const response = await spotify.getRecommendations(mood) as any;
-      console.log('🎵 Spotify response:', response);
+      // Skip the broken backend endpoint entirely
+      const moodSearchTerms: { [key: string]: string[] } = {
+        happy: ['upbeat pop', 'feel good music', 'happy songs', 'uplifting music'],
+        sad: ['sad songs', 'melancholy music', 'emotional ballads', 'heartbreak songs'],
+        energetic: ['workout music', 'high energy', 'pump up songs', 'dance music'],
+        calm: ['chill music', 'relaxing songs', 'ambient music', 'peaceful music'],
+        excited: ['party music', 'celebration songs', 'exciting music', 'hype music'],
+        anxious: ['calming music', 'stress relief', 'meditation music', 'soothing songs'],
+        peaceful: ['zen music', 'tranquil sounds', 'peaceful songs', 'nature sounds']
+      };
       
-      if (response.tracks && response.tracks.length > 0) {
-        return response.tracks;
+      // Get random search term for variety
+      const searchTerms = moodSearchTerms[mood] || moodSearchTerms.happy;
+      const randomTerm = searchTerms[Math.floor(Math.random() * searchTerms.length)];
+      
+      console.log('🎵 Searching for:', randomTerm);
+      const searchResult = await spotify.search(randomTerm, 'track', 12) as any;
+      console.log('🎵 Search result:', searchResult);
+      
+      if (searchResult.tracks?.items?.length > 0) {
+        // Shuffle the results for variety
+        const shuffled = [...searchResult.tracks.items].sort(() => Math.random() - 0.5);
+        return shuffled.slice(0, 8);
       }
       
-      // Fallback: search for mood-related music
-      console.log('🎵 Fallback: searching for mood music...');
-      const fallbackSearch = await spotify.search(`${mood} music`, 'track', 10) as any;
-      console.log('🎵 Fallback search result:', fallbackSearch);
-      
-      return fallbackSearch.tracks?.items || [];
+      return [];
       
     } catch (error) {
       console.error('❌ Failed to get recommendations:', error);
-      
-      // Last resort: search for popular tracks
-      try {
-        console.log('🎵 Last resort: searching for popular tracks...');
-        const popularSearch = await spotify.search('popular 2024', 'track', 8) as any;
-        return popularSearch.tracks?.items || [];
-      } catch (searchError) {
-        console.error('❌ Even fallback search failed:', searchError);
-        return [];
-      }
+      return [];
     }
   };
 
@@ -290,9 +293,17 @@ const SpotifyMoodRecommendations: React.FC<SpotifyMoodRecommendationsProps> = ({
                 key={mood}
                 onClick={async () => {
                   setLoading(true);
-                  const recs = await getSpotifyMoodRecommendations(mood);
-                  setRecommendations(recs);
-                  setCurrentMoodFilter(mood);
+                  try {
+                    const recs = await getSpotifyMoodRecommendations(mood);
+                    setRecommendations(recs);
+                    setCurrentMoodFilter(mood);
+                  } catch (error) {
+                    console.error('Failed to load recommendations:', error);
+                    // Fallback to direct search if API fails
+                    const fallbackSearch = await spotify.search(`${mood} music`, 'track', 8) as any;
+                    setRecommendations(fallbackSearch.tracks?.items || []);
+                    setCurrentMoodFilter(mood);
+                  }
                   setLoading(false);
                 }}
                 style={{

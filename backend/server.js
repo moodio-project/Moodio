@@ -1021,21 +1021,30 @@ app.get('/api/moods', authenticateToken, (req, res) => {
 app.post('/api/moods', authenticateToken, (req, res) => {
   const { mood, intensity, note } = req.body;
   
+  console.log('🎵 Creating mood:', { mood, intensity, note, userId: req.user.userId });
+  
   db.run(
     'INSERT INTO moods (user_id, mood, intensity, note) VALUES (?, ?, ?, ?)',
     [req.user.userId, mood, intensity, note],
     function(err) {
       if (err) {
-        console.error('Database error:', err);
-        return res.status(500).json({ error: 'Failed to save mood' });
+        console.error('❌ Database error:', err);
+        return res.status(500).json({ error: 'Failed to save mood', details: err.message });
       }
       
-      // Get the actual record with correct timestamp
+      console.log('✅ Mood saved with ID:', this.lastID);
+      
+      // Get the actual record
       db.get(
         'SELECT * FROM moods WHERE id = ?',
         [this.lastID],
         (err, row) => {
-          if (err) return res.status(500).json({ error: 'Failed to retrieve mood' });
+          if (err) {
+            console.error('❌ Retrieval error:', err);
+            return res.status(500).json({ error: 'Failed to retrieve mood' });
+          }
+          
+          console.log('✅ Returning mood:', row);
           res.status(201).json({ mood: row });
         }
       );

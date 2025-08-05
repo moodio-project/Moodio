@@ -60,6 +60,14 @@ const Dashboard: React.FC<DashboardProps> = ({ user, onLogout, spotifyToken, has
   const handleMoodSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
+      console.log('🔍 Dashboard newMood data:', newMood);
+      console.log('🔍 Individual values:', {
+        mood: newMood.mood,
+        intensity: newMood.intensity,
+        note: newMood.note,
+        intensityType: typeof newMood.intensity
+      });
+      
       await moods.create(newMood.mood, newMood.intensity, newMood.note);
       setNewMood({ mood: 'happy', intensity: 5, note: '' });
       setShowMoodForm(false);
@@ -68,7 +76,8 @@ const Dashboard: React.FC<DashboardProps> = ({ user, onLogout, spotifyToken, has
       // Show success notification
       showNotification('Mood logged successfully! 🎵');
     } catch (error) {
-      console.error('Failed to save mood:', error);
+      console.error('❌ Failed to save mood:', error);
+      console.error('❌ Error details:', error.response?.data || error.message);
       showNotification('Failed to save mood. Please try again.', 'error');
     }
   };
