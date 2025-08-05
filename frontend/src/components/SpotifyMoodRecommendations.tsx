@@ -274,7 +274,7 @@ const SpotifyMoodRecommendations: React.FC<SpotifyMoodRecommendationsProps> = ({
         <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '20px' }}>
           <div style={{ fontSize: '24px' }}>🎯</div>
           <h2 style={{ color: 'white', margin: 0, fontSize: '20px' }}>
-            Songs for Your {currentMoodFilter} Mood
+          Songs For Your {currentMoodFilter.charAt(0).toUpperCase() + currentMoodFilter.slice(1)} Mood
           </h2>
         </div>
 

@@ -347,36 +347,15 @@ const Profile: React.FC<ProfileProps> = ({ user, onLogout }) => {
             borderRadius: '12px',
             padding: '24px'
           }}>
-            <h3 style={{
+            <h3 style={{  
               color: '#FFFFFF',
               fontSize: '20px',
-              marginBottom: '16px'
+              marginBottom: '16px',
+              textAlign: 'center'
             }}>
               Account Actions
             </h3>
-            <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap' }}>
-              <button
-                style={{
-                  background: 'transparent',
-                  border: '1px solid #666',
-                  borderRadius: '6px',
-                  padding: '12px 24px',
-                  color: '#B3B3B3',
-                  fontSize: '14px',
-                  cursor: 'pointer',
-                  transition: 'all 0.2s ease'
-                }}
-                onMouseOver={(e) => {
-                  e.currentTarget.style.borderColor = '#22C55E';
-                  e.currentTarget.style.color = '#22C55E';
-                }}
-                onMouseOut={(e) => {
-                  e.currentTarget.style.borderColor = '#666';
-                  e.currentTarget.style.color = '#B3B3B3';
-                }}
-              >
-                Export My Data
-              </button>
+            <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap', justifyContent: 'center' }}>
               <button
                 onClick={onLogout}
                 style={{

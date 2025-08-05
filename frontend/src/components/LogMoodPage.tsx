@@ -118,11 +118,14 @@ const LogMoodPage: React.FC<LogMoodPageProps> = ({ user, onLogout, spotifyToken 
         margin: '0 auto 0 240px'
       }}>
         <div style={{
-          background: '#1E1E1E',
-          borderRadius: '12px',
-          padding: '32px',
-          boxShadow: '0 4px 20px rgba(0, 0, 0, 0.3)'
-        }}>
+  background: '#1E1E1E',
+  borderRadius: '12px',
+  padding: '32px',
+  boxShadow: '0 4px 20px rgba(0, 0, 0, 0.3)',
+  minHeight: 'calc(100vh - 64px)',
+  width: '100%',
+  maxWidth: 'none'
+}}>
           <h1 style={{
             color: '#22C55E',
             fontSize: '32px',
@@ -206,7 +209,7 @@ const LogMoodPage: React.FC<LogMoodPageProps> = ({ user, onLogout, spotifyToken 
                     onClick={() => setSelectedMood(mood.value)}
                     style={{
                       background: selectedMood === mood.value ? `${mood.color}20` : 'transparent',
-                      border: `2px solid ${selectedMood === mood.value ? mood.color : 'transparent'}`,
+                      border: `2px solid ${selectedMood === mood.value ? mood.color : 'rgba(255, 255, 255, 0.1)'}`,
                       borderRadius: '8px',
                       padding: '12px 16px',
                       color: '#FFFFFF',
