@@ -1,0 +1,24 @@
+services:
+  - type: web
+    name: moodio-backend
+    env: node
+    plan: free
+    buildCommand: npm install --prefix backend
+    startCommand: cd backend && npm start
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: PORT
+        value: 10000
+      - key: JWT_SECRET
+        generateValue: true
+      - key: SPOTIFY_CLIENT_ID
+        sync: false
+      - key: SPOTIFY_CLIENT_SECRET
+        sync: false
+      - key: SPOTIFY_REDIRECT_URI
+        value: https://moodio-backend.onrender.com/auth/spotify/callback
+      - key: OPENAI_API_KEY
+        sync: false
+      - key: GENIUS_API_KEY
+        sync: false 

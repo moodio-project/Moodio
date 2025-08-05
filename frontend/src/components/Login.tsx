@@ -122,17 +122,36 @@ const Login: React.FC<LoginProps> = ({ onLogin }) => {
           </button>
         </div>
 
-        {/* Divider */}
-        <div style={{ 
-          display: 'flex', 
-          alignItems: 'center', 
-          gap: '16px', 
-          marginBottom: '24px' 
-        }}>
-          <div style={{ flex: 1, height: '1px', background: '#282828' }}></div>
-          <span style={{ color: '#B3B3B3', fontSize: '14px' }}>or</span>
-          <div style={{ flex: 1, height: '1px', background: '#282828' }}></div>
-        </div>
+        {/* Divider - Enhanced */}
+<div style={{ 
+  display: 'flex', 
+  alignItems: 'center', 
+  gap: '20px', 
+  marginBottom: '24px',
+  padding: '0 8px'
+}}>
+  <div style={{ 
+    flex: 1, 
+    height: '1px', 
+    background: 'linear-gradient(to right, transparent, #404040, transparent)' 
+  }}></div>
+  <span style={{ 
+    color: '#FFFFFF', 
+    fontSize: '14px', 
+    fontWeight: '500',
+    background: '#1E1E1E',
+    padding: '4px 12px',
+    borderRadius: '16px',
+    border: '1px solid #404040'
+  }}>
+    or
+  </span>
+  <div style={{ 
+    flex: 1, 
+    height: '1px', 
+    background: 'linear-gradient(to left, transparent, #404040, transparent)' 
+  }}></div>
+</div>
 
         {/* Email/Password Form */}
         <form onSubmit={handleSubmit}>

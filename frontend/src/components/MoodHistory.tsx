@@ -14,6 +14,9 @@ interface Mood {
   intensity: number;
   note: string;
   created_at: string;
+  song_name?: string;  // NEW - optional song data
+  artist_name?: string; // NEW - optional artist data
+  song_id?: string;    // NEW - optional song ID
 }
 
 interface MoodHistoryProps {
@@ -50,7 +53,8 @@ const MoodHistory: React.FC<MoodHistoryProps> = ({ user, onLogout }) => {
     anxious: '😰',
     angry: '😠',
     energetic: '⚡',
-    tired: '😴'
+    tired: '😴',
+    peaceful: '☮️'  // Added peaceful emoji
   };
 
   const groupMoodsByDate = (moods: Mood[]) => {
@@ -154,7 +158,7 @@ const MoodHistory: React.FC<MoodHistoryProps> = ({ user, onLogout }) => {
                                 mood.mood === 'anxious' ? '#FF9800' :    // Orange
                                 mood.mood === 'peaceful' ? '#9C27B0' :   // Purple
                                 '#B3B3B3',  // Default gray for any other moods
-                                color: 'white',
+                                color: 'black',
                                 padding: '2px 8px',
                                 borderRadius: '12px',
                                 fontSize: '12px',
@@ -171,6 +175,39 @@ const MoodHistory: React.FC<MoodHistoryProps> = ({ user, onLogout }) => {
                                 })}
                               </span>
                             </div>
+                            
+                            {/* Show song if available - NEW FEATURE! */}
+                            {mood.song_name && mood.artist_name && (
+                              <div style={{
+                                display: 'flex',
+                                alignItems: 'center',
+                                gap: '8px',
+                                marginBottom: '8px',
+                                padding: '8px 12px',
+                                background: '#2A2A2A',
+                                borderRadius: '6px',
+                                border: '1px solid #333'
+                              }}>
+                                <span style={{ fontSize: '16px' }}>🎵</span>
+                                <div>
+                                  <p style={{ 
+                                    color: '#1DB954', 
+                                    margin: 0, 
+                                    fontSize: '13px', 
+                                    fontWeight: '600' 
+                                  }}>
+                                    "{mood.song_name}"
+                                  </p>
+                                  <p style={{ 
+                                    color: '#B3B3B3', 
+                                    margin: 0, 
+                                    fontSize: '12px' 
+                                  }}>
+                                    by {mood.artist_name}
+                                  </p>
+                                </div>
+                              </div>
+                            )}
                             
                             {mood.note && (
                               <p style={{ color: '#B3B3B3', margin: 0, fontSize: '14px', fontStyle: 'italic' }}>

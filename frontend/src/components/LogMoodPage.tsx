@@ -78,6 +78,7 @@ const LogMoodPage: React.FC<LogMoodPageProps> = ({ user, onLogout, spotifyToken 
     
     setIsLoading(true);
     try {
+      // Use the working API method (like Dashboard does)
       await moods.create(selectedMood, moodIntensity, notes);
       
       // Reset form
@@ -85,19 +86,18 @@ const LogMoodPage: React.FC<LogMoodPageProps> = ({ user, onLogout, spotifyToken 
       setMoodIntensity(5);
       setNotes('');
       
-      // Show success message instead of alert
+      // Show success message
       setShowSuccess(true);
       setTimeout(() => setShowSuccess(false), 3000);
       
     } catch (error) {
       console.error('Error logging mood:', error);
-      alert('Error logging mood. Please try again.'); // Keep this alert for errors
+      alert('Error logging mood. Please try again.');
     } finally {
       setIsLoading(false);
     }
   };
 
-  
 
   return (
     <div style={{ display: 'flex', minHeight: '100vh', background: '#121212' }}>

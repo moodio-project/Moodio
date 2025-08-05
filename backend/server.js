@@ -10,6 +10,10 @@ require('dotenv').config();
 const app = express();
 const PORT = process.env.PORT || 3001;
 
+// Add deployment-friendly logging
+console.log(`🚀 Starting Moodio server on port ${PORT}`);
+console.log(`🌍 Environment: ${process.env.NODE_ENV || 'development'}`);
+
 // Initialize SQLite database
 const db = new sqlite3.Database('./database.sqlite');
 
@@ -136,7 +140,9 @@ getSpotifyToken();
 
 // Middleware
 app.use(cors({ 
-  origin: 'http://localhost:3000',
+  origin: process.env.NODE_ENV === 'production' 
+    ? ['https://moodio.onrender.com', 'https://moodio-frontend.onrender.com']
+    : 'http://localhost:3000',
   credentials: true 
 }));
 app.use(express.json());
@@ -225,12 +231,18 @@ app.get('/auth/spotify/callback', async (req, res) => {
   
   if (error) {
     console.error('❌ Spotify OAuth error:', error);
-    return res.redirect('http://localhost:3000/login?error=spotify_auth_failed');
+    const redirectUrl = process.env.NODE_ENV === 'production' 
+      ? 'https://moodio-frontend.onrender.com/login?error=spotify_auth_failed'
+      : 'http://localhost:3000/login?error=spotify_auth_failed';
+    return res.redirect(redirectUrl);
   }
   
   if (!code) {
     console.error('❌ No authorization code received');
-    return res.redirect('http://localhost:3000/login?error=no_code');
+    const redirectUrl = process.env.NODE_ENV === 'production' 
+      ? 'https://moodio-frontend.onrender.com/login?error=no_code'
+      : 'http://localhost:3000/login?error=no_code';
+    return res.redirect(redirectUrl);
   }
   
   try {
@@ -272,7 +284,10 @@ app.get('/auth/spotify/callback', async (req, res) => {
     db.get('SELECT * FROM users WHERE spotify_id = ?', [spotifyUser.id], async (err, existingUser) => {
       if (err) {
         console.error('❌ Database SELECT error:', err);
-        return res.redirect('http://localhost:3000/login?error=database_error');
+        const redirectUrl = process.env.NODE_ENV === 'production' 
+          ? 'https://moodio-frontend.onrender.com/login?error=database_error'
+          : 'http://localhost:3000/login?error=database_error';
+        return res.redirect(redirectUrl);
       }
       
       if (existingUser) {
@@ -314,7 +329,10 @@ app.get('/auth/spotify/callback', async (req, res) => {
         });
         
         // Redirect to frontend with all data
-        const redirectURL = `http://localhost:3000?token=${token}&user=${encodeURIComponent(JSON.stringify(userData))}`;
+        const baseUrl = process.env.NODE_ENV === 'production' 
+          ? 'https://moodio-frontend.onrender.com'
+          : 'http://localhost:3000';
+        const redirectURL = `${baseUrl}?token=${token}&user=${encodeURIComponent(JSON.stringify(userData))}`;
         console.log('🔗 Redirect URL created, length:', redirectURL.length);
         
         res.redirect(redirectURL);
@@ -334,7 +352,10 @@ app.get('/auth/spotify/callback', async (req, res) => {
           function(err) {
             if (err) {
               console.error('❌ Database INSERT error:', err);
-              return res.redirect('http://localhost:3000/login?error=database_error');
+              const redirectUrl = process.env.NODE_ENV === 'production' 
+                ? 'https://moodio-frontend.onrender.com/login?error=database_error'
+                : 'http://localhost:3000/login?error=database_error';
+              return res.redirect(redirectUrl);
             }
             
             console.log('✅ User created successfully with ID:', this.lastID);
@@ -374,7 +395,10 @@ app.get('/auth/spotify/callback', async (req, res) => {
             });
             
             // Redirect to frontend with all data
-            const redirectURL = `http://localhost:3000?token=${token}&user=${encodeURIComponent(JSON.stringify(userData))}`;
+            const baseUrl = process.env.NODE_ENV === 'production' 
+              ? 'https://moodio-frontend.onrender.com'
+              : 'http://localhost:3000';
+            const redirectURL = `${baseUrl}?token=${token}&user=${encodeURIComponent(JSON.stringify(userData))}`;
             console.log('🔗 Redirect URL created, length:', redirectURL.length);
             
             res.redirect(redirectURL);
@@ -384,7 +408,10 @@ app.get('/auth/spotify/callback', async (req, res) => {
     });
   } catch (error) {
     console.error('❌ Spotify OAuth process error:', error);
-    res.redirect('http://localhost:3000/login?error=spotify_auth_failed');
+    const redirectUrl = process.env.NODE_ENV === 'production' 
+      ? 'https://moodio-frontend.onrender.com/login?error=spotify_auth_failed'
+      : 'http://localhost:3000/login?error=spotify_auth_failed';
+    res.redirect(redirectUrl);
   }
 });
 
@@ -797,6 +824,29 @@ app.get('/api/spotify/recommendations/:mood', authenticateToken, async (req, res
   }
 });
 
+app.get('/migrate/add-song-columns', (req, res) => {
+  console.log('🔄 Adding song columns to moods table...');
+  
+  db.run('ALTER TABLE moods ADD COLUMN song_name TEXT', (err) => {
+    if (err && !err.message.includes('duplicate column name')) {
+      console.error('Error adding song_name column:', err);
+    } else {
+      console.log('✅ Added song_name column');
+    }
+    
+    db.run('ALTER TABLE moods ADD COLUMN artist_name TEXT', (err) => {
+      if (err && !err.message.includes('duplicate column name')) {
+        console.error('Error adding artist_name column:', err);
+      } else {
+        console.log('✅ Added artist_name column');
+      }
+      
+      console.log('✅ Database migration completed!');
+      res.json({ success: true, message: 'Song columns added to moods table!' });
+    });
+  });
+});
+
 // Add this to your server.js after your existing routes
 
 // OpenAI Integration
@@ -971,27 +1021,47 @@ app.get('/api/moods', authenticateToken, (req, res) => {
 app.post('/api/moods', authenticateToken, (req, res) => {
   const { mood, intensity, note } = req.body;
   
-  // Use current local timestamp
-  const now = new Date().toISOString();
-  
   db.run(
-    'INSERT INTO moods (user_id, mood, intensity, note, created_at) VALUES (?, ?, ?, ?, ?)',
-    [req.user.userId, mood, intensity, note, now],
+    'INSERT INTO moods (user_id, mood, intensity, note) VALUES (?, ?, ?, ?)',
+    [req.user.userId, mood, intensity, note],
     function(err) {
-      if (err) return res.status(500).json({ error: 'Failed to save mood' });
+      if (err) {
+        console.error('Database error:', err);
+        return res.status(500).json({ error: 'Failed to save mood' });
+      }
       
-      // Get the actual record
-      db.get('SELECT * FROM moods WHERE id = ?', [this.lastID], (err, row) => {
-        if (err) return res.status(500).json({ error: 'Failed to retrieve mood' });
-        res.status(201).json({ mood: row });
-      });
+      // Get the actual record with correct timestamp
+      db.get(
+        'SELECT * FROM moods WHERE id = ?',
+        [this.lastID],
+        (err, row) => {
+          if (err) return res.status(500).json({ error: 'Failed to retrieve mood' });
+          res.status(201).json({ mood: row });
+        }
+      );
     }
   );
 });
 
 // Health check
 app.get('/api/health', (req, res) => {
-  res.json({ status: 'OK', message: 'Server running!' });
+  res.json({ 
+    status: 'OK', 
+    message: 'Moodio server running!',
+    timestamp: new Date().toISOString(),
+    port: PORT,
+    environment: process.env.NODE_ENV || 'development'
+  });
+});
+
+// Root health check for Render
+app.get('/', (req, res) => {
+  res.json({ 
+    status: 'OK', 
+    message: 'Moodio API is running!',
+    timestamp: new Date().toISOString(),
+    port: PORT
+  });
 });
 
 // Add this temporary migration route
@@ -1141,4 +1211,6 @@ app.listen(PORT, () => {
   console.log(`✅ Server running on port ${PORT}`);
   console.log(`✅ Database initialized`);
   console.log(`✅ Spotify integration ready`);
+  console.log(`✅ Health check available at http://localhost:${PORT}/api/health`);
+  console.log(`✅ Root endpoint available at http://localhost:${PORT}/`);
 });
