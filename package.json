@@ -8,7 +8,7 @@
     "kill-ports": "lsof -ti:3001,5173 | xargs kill -9 2>/dev/null || true",
     "dev:clean": "npm run kill-ports && npm run dev",
     "build": "npm install --prefix backend && npm install --prefix frontend && npm run build --prefix frontend",
-    "start": "npm start --prefix backend",
+    "start": "cd ./frontend/ && npm i && npm run build && cd ../backend && npm i && npm start",
     "install:all": "npm install && npm install --prefix backend && npm install --prefix frontend"
   },
   "keywords": ["music", "mood", "spotify", "ai", "recommendations"],
