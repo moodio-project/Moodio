@@ -105,29 +105,26 @@ const SpotifyMoodRecommendations: React.FC<SpotifyMoodRecommendationsProps> = ({
 
   const getSpotifyMoodRecommendations = async (mood: string) => {
     try {
-      console.log('🎵 Getting recommendations for mood:', mood);
+      console.log('🎵 Getting DIRECT search recommendations for mood:', mood);
       
-      // Skip the broken backend endpoint entirely
       const moodSearchTerms: { [key: string]: string[] } = {
         happy: ['upbeat pop', 'feel good music', 'happy songs', 'uplifting music'],
         sad: ['sad songs', 'melancholy music', 'emotional ballads', 'heartbreak songs'],
         energetic: ['workout music', 'high energy', 'pump up songs', 'dance music'],
         calm: ['chill music', 'relaxing songs', 'ambient music', 'peaceful music'],
-        excited: ['party music', 'celebration songs', 'exciting music', 'hype music'],
-        anxious: ['calming music', 'stress relief', 'meditation music', 'soothing songs'],
-        peaceful: ['zen music', 'tranquil sounds', 'peaceful songs', 'nature sounds']
+        excited: ['party music', 'celebration songs', 'exciting music', 'hype music']
       };
       
-      // Get random search term for variety
       const searchTerms = moodSearchTerms[mood] || moodSearchTerms.happy;
       const randomTerm = searchTerms[Math.floor(Math.random() * searchTerms.length)];
       
-      console.log('🎵 Searching for:', randomTerm);
+      console.log('🎵 DIRECT search for:', randomTerm);
+      
+      // IMPORTANT: Use spotify.search, NOT spotify.getRecommendations
       const searchResult = await spotify.search(randomTerm, 'track', 12) as any;
-      console.log('🎵 Search result:', searchResult);
+      console.log('✅ DIRECT search result:', searchResult);
       
       if (searchResult.tracks?.items?.length > 0) {
-        // Shuffle the results for variety
         const shuffled = [...searchResult.tracks.items].sort(() => Math.random() - 0.5);
         return shuffled.slice(0, 8);
       }
@@ -135,7 +132,7 @@ const SpotifyMoodRecommendations: React.FC<SpotifyMoodRecommendationsProps> = ({
       return [];
       
     } catch (error) {
-      console.error('❌ Failed to get recommendations:', error);
+      console.error('❌ DIRECT search failed:', error);
       return [];
     }
   };

@@ -77,7 +77,7 @@ const Dashboard: React.FC<DashboardProps> = ({ user, onLogout, spotifyToken, has
       showNotification('Mood logged successfully! 🎵');
     } catch (error) {
       console.error('❌ Failed to save mood:', error);
-      console.error('❌ Error details:', error.response?.data || error.message);
+      console.error('❌ Error details:', (error as any).response?.data || (error as any).message);
       showNotification('Failed to save mood. Please try again.', 'error');
     }
   };
