@@ -971,15 +971,24 @@ app.get('/api/moods', authenticateToken, (req, res) => {
 app.post('/api/moods', authenticateToken, (req, res) => {
   const { mood, intensity, note } = req.body;
   
+  // Use current local timestamp
+  const now = new Date().toISOString();
+  
   db.run(
-    'INSERT INTO moods (user_id, mood, intensity, note) VALUES (?, ?, ?, ?)',
-    [req.user.userId, mood, intensity, note],
+    'INSERT INTO moods (user_id, mood, intensity, note, created_at) VALUES (?, ?, ?, ?, ?)',
+    [req.user.userId, mood, intensity, note, now],
     function(err) {
       if (err) return res.status(500).json({ error: 'Failed to save mood' });
       
-      res.status(201).json({
-        mood: { id: this.lastID, mood, intensity, note, created_at: new Date() }
-      });
+      // Get the actual record with correct timestamp
+      db.get(
+        'SELECT * FROM moods WHERE id = ?',
+        [this.lastID],
+        (err, row) => {
+          if (err) return res.status(500).json({ error: 'Failed to retrieve mood' });
+          res.status(201).json({ mood: row });
+        }
+      );
     }
   );
 });

@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import Navigation from './Navigation';
+import { moods } from '../api';
 
 interface User {
   id: number;
@@ -30,17 +31,12 @@ const LogMoodPage: React.FC<LogMoodPageProps> = ({ user, onLogout, spotifyToken 
   const [currentTrack, setCurrentTrack] = useState<CurrentTrack | null>(null);
   const [isLoading, setIsLoading] = useState(false);
 
-  const moods = [
-    { value: 'happy', label: '😊 Happy', color: '#22C55E' },
-    { value: 'sad', label: '😢 Sad', color: '#F472B6' },
-    { value: 'calm', label: '😌 Calm', color: '#A78BFA' },
-    { value: 'energetic', label: '⚡ Energetic', color: '#22C55E' },
-    { value: 'anxious', label: '😰 Anxious', color: '#F472B6' },
-    { value: 'excited', label: '🤩 Excited', color: '#22C55E' },
-    { value: 'melancholy', label: '😔 Melancholy', color: '#A78BFA' },
-    { value: 'peaceful', label: '☮️ Peaceful', color: '#A78BFA' },
-    { value: 'frustrated', label: '😤 Frustrated', color: '#F472B6' },
-    { value: 'content', label: '😊 Content', color: '#22C55E' }
+  const moodOptions = [
+    { value: 'happy', label: '😊 Happy', color: '#FFEB3B' },      // Yellow
+    { value: 'sad', label: '😢 Sad', color: '#2196F3' },           // Blue  
+    { value: 'energetic', label: '⚡ Energetic', color: '#F44336' }, // Red
+    { value: 'anxious', label: '😰 Anxious', color: '#FF9800' },    // Orange
+    { value: 'peaceful', label: '☮️ Peaceful', color: '#9C27B0' }   // Purple
   ];
 
   // Get current playing track from Spotify
@@ -50,14 +46,19 @@ const LogMoodPage: React.FC<LogMoodPageProps> = ({ user, onLogout, spotifyToken 
 
   const fetchCurrentTrack = async () => {
     if (!spotifyToken) return;
-
+  
     try {
       const response = await fetch('https://api.spotify.com/v1/me/player/currently-playing', {
         headers: {
           'Authorization': `Bearer ${spotifyToken}`
         }
       });
-
+  
+      if (response.status === 401) {
+        console.log('Spotify token expired');
+        return;
+      }
+  
       if (response.ok && response.status !== 204) {
         const data = await response.json();
         if (data && data.item) {
@@ -69,42 +70,34 @@ const LogMoodPage: React.FC<LogMoodPageProps> = ({ user, onLogout, spotifyToken 
     }
   };
 
+  const [showSuccess, setShowSuccess] = useState(false);
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!selectedMood) return;
-
+    
     setIsLoading(true);
     try {
-      const response = await fetch('http://localhost:3001/api/moods', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        credentials: 'include',
-        body: JSON.stringify({
-          mood: selectedMood,
-          mood_intensity: moodIntensity,
-          note: notes,
-          song_id: currentTrack?.id || null
-        })
-      });
-
-      if (response.ok) {
-        // Reset form
-        setSelectedMood('');
-        setMoodIntensity(5);
-        setNotes('');
-        alert('Mood logged successfully! 🎵');
-      } else {
-        throw new Error('Failed to log mood');
-      }
+      await moods.create(selectedMood, moodIntensity, notes);
+      
+      // Reset form
+      setSelectedMood('');
+      setMoodIntensity(5);
+      setNotes('');
+      
+      // Show success message instead of alert
+      setShowSuccess(true);
+      setTimeout(() => setShowSuccess(false), 3000);
+      
     } catch (error) {
       console.error('Error logging mood:', error);
-      alert('Error logging mood. Please try again.');
+      alert('Error logging mood. Please try again.'); // Keep this alert for errors
     } finally {
       setIsLoading(false);
     }
   };
+
+  
 
   return (
     <div style={{ display: 'flex', minHeight: '100vh', background: '#121212' }}>
@@ -114,17 +107,13 @@ const LogMoodPage: React.FC<LogMoodPageProps> = ({ user, onLogout, spotifyToken 
         marginLeft: '240px', 
         flex: 1, 
         padding: '32px',
-        maxWidth: '800px',
-        margin: '0 auto 0 240px'
       }}>
         <div style={{
   background: '#1E1E1E',
   borderRadius: '12px',
   padding: '32px',
   boxShadow: '0 4px 20px rgba(0, 0, 0, 0.3)',
-  minHeight: 'calc(100vh - 64px)',
-  width: '100%',
-  maxWidth: 'none'
+  minHeight: 'calc(100vh - 64px)'
 }}>
           <h1 style={{
             color: '#22C55E',
@@ -202,7 +191,7 @@ const LogMoodPage: React.FC<LogMoodPageProps> = ({ user, onLogout, spotifyToken 
                 gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))',
                 gap: '12px'
               }}>
-                {moods.map((mood) => (
+                {moodOptions.map((mood) => (
                   <button
                     key={mood.value}
                     type="button"
@@ -351,6 +340,24 @@ const LogMoodPage: React.FC<LogMoodPageProps> = ({ user, onLogout, spotifyToken 
               {isLoading ? 'Logging Mood...' : 'Log Mood 🎵'}
             </button>
           </form>
+          
+          {/* Success Message */}
+          {showSuccess && (
+            <div style={{
+              position: 'fixed',
+              top: '20px',
+              right: '20px',
+              background: '#22C55E',
+              color: 'white',
+              padding: '16px 24px',
+              borderRadius: '8px',
+              boxShadow: '0 4px 12px rgba(34, 197, 94, 0.3)',
+              zIndex: 1000,
+              fontWeight: '600'
+            }}>
+              ✅ Mood logged successfully!
+            </div>
+          )}
 
           {/* Add slider styling */}
           <style>{`

@@ -32,7 +32,9 @@ const MoodHistory: React.FC<MoodHistoryProps> = ({ user, onLogout }) => {
   const loadMoods = async () => {
     try {
       const response: any = await moods.getAll();
-      setUserMoods(response.moods);
+      console.log('🔍 MoodHistory API response:', response);
+      console.log('🔍 Moods array:', response.moods);
+      setUserMoods(response.moods || []);
     } catch (error) {
       console.error('Failed to load moods:', error);
     } finally {
@@ -146,9 +148,12 @@ const MoodHistory: React.FC<MoodHistoryProps> = ({ user, onLogout }) => {
                               </h4>
                               
                               <div style={{
-                                background: mood.intensity >= 8 ? '#FF6B6B' : 
-                                           mood.intensity >= 6 ? '#4ECDC4' : 
-                                           mood.intensity >= 4 ? '#45B7D1' : '#96CEB4',
+                                background: mood.mood === 'happy' ? '#FFEB3B' :     // Yellow
+                                mood.mood === 'sad' ? '#2196F3' :        // Blue
+                                mood.mood === 'energetic' ? '#F44336' :  // Red
+                                mood.mood === 'anxious' ? '#FF9800' :    // Orange
+                                mood.mood === 'peaceful' ? '#9C27B0' :   // Purple
+                                '#B3B3B3',  // Default gray for any other moods
                                 color: 'white',
                                 padding: '2px 8px',
                                 borderRadius: '12px',
@@ -161,7 +166,8 @@ const MoodHistory: React.FC<MoodHistoryProps> = ({ user, onLogout }) => {
                               <span style={{ color: '#535353', fontSize: '12px' }}>
                                 {new Date(mood.created_at).toLocaleTimeString('en-US', { 
                                   hour: '2-digit', 
-                                  minute: '2-digit' 
+                                  minute: '2-digit',
+                                  timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone
                                 })}
                               </span>
                             </div>

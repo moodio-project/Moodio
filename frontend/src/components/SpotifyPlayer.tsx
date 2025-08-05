@@ -265,57 +265,6 @@ useEffect(() => {
     }
   };
 
-  const nextTrack = async () => {
-    if (!accessToken) {
-      console.error('❌ No access token available');
-      return;
-    }
-
-    try {
-      console.log('⏭️ Next track');
-      
-      const response = await fetch('https://api.spotify.com/v1/me/player/next', {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${accessToken}`
-        }
-      });
-      
-      if (response.ok || response.status === 204) {
-        console.log('✅ Next track successful');
-      } else {
-        console.error('❌ Next track failed:', response.status);
-      }
-    } catch (error) {
-      console.error('❌ Error skipping to next track:', error);
-    }
-  };
-
-  const previousTrack = async () => {
-    if (!accessToken) {
-      console.error('❌ No access token available');
-      return;
-    }
-
-    try {
-      console.log('⏮️ Previous track');
-      
-      const response = await fetch('https://api.spotify.com/v1/me/player/previous', {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${accessToken}`
-        }
-      });
-      
-      if (response.ok || response.status === 204) {
-        console.log('✅ Previous track successful');
-      } else {
-        console.error('❌ Previous track failed:', response.status);
-      }
-    } catch (error) {
-      console.error('❌ Error skipping to previous track:', error);
-    }
-  };
 
   // Format time helper
   const formatTime = (ms: number) => {
@@ -493,24 +442,6 @@ useEffect(() => {
             gap: '16px'
           }}>
             <button
-              onClick={previousTrack}
-              style={{
-                background: 'transparent',
-                border: 'none',
-                color: '#B3B3B3',
-                cursor: 'pointer',
-                fontSize: '20px',
-                padding: '8px',
-                borderRadius: '4px',
-                transition: 'color 0.2s ease'
-              }}
-              onMouseOver={(e) => e.currentTarget.style.color = '#FFFFFF'}
-              onMouseOut={(e) => e.currentTarget.style.color = '#B3B3B3'}
-            >
-              ⏮️
-            </button>
-            
-            <button
               onClick={togglePlayback}
               style={{
                 background: '#22C55E',
@@ -530,24 +461,6 @@ useEffect(() => {
               onMouseOut={(e) => e.currentTarget.style.transform = 'scale(1)'}
             >
               {isPlaying ? '⏸️' : '▶️'}
-            </button>
-            
-            <button
-              onClick={nextTrack}
-              style={{
-                background: 'transparent',
-                border: 'none',
-                color: '#B3B3B3',
-                cursor: 'pointer',
-                fontSize: '20px',
-                padding: '8px',
-                borderRadius: '4px',
-                transition: 'color 0.2s ease'
-              }}
-              onMouseOver={(e) => e.currentTarget.style.color = '#FFFFFF'}
-              onMouseOut={(e) => e.currentTarget.style.color = '#B3B3B3'}
-            >
-              ⏭️
             </button>
           </div>
         </div>

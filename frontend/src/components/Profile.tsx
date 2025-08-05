@@ -62,17 +62,17 @@ const Profile: React.FC<ProfileProps> = ({ user, onLogout }) => {
       <Navigation user={user} currentPage="profile" onLogout={onLogout} />
       
       <div style={{ 
-        marginLeft: '240px', 
-        flex: 1, 
-        padding: '32px',
-        maxWidth: '800px',
-        margin: '0 auto 0 240px'
+         marginLeft: '240px', 
+         flex: 1, 
+         padding: '0',  // Remove padding from outer container
+         background: '#121212'
       }}>
         <div style={{
           background: '#1E1E1E',
           borderRadius: '12px',
           padding: '32px',
-          boxShadow: '0 4px 20px rgba(0, 0, 0, 0.3)'
+          boxShadow: '0 4px 20px rgba(0, 0, 0, 0.3)',
+          height: 'calc(100vh - 64px)'
         }}>
           <h1 style={{
             color: '#22C55E',
