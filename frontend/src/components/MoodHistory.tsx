@@ -45,6 +45,58 @@ const MoodHistory: React.FC<MoodHistoryProps> = ({ user, onLogout }) => {
     }
   };
 
+  // Add this delete function after loadMoods()
+const deleteMood = async (moodId: number) => {
+  try {
+    const response = await fetch(`http://localhost:3001/api/moods/${moodId}`, {
+      method: 'DELETE',
+      headers: {
+        'Authorization': `Bearer ${localStorage.getItem('token')}`
+      }
+    });
+
+    if (response.ok) {
+      console.log('✅ Mood deleted successfully');
+      // Remove from local state immediately
+      setUserMoods(prevMoods => prevMoods.filter(mood => mood.id !== moodId));
+      
+      // Show success notification
+      showNotification('Mood deleted successfully! 🗑️');
+    } else {
+      throw new Error('Failed to delete mood');
+    }
+  } catch (error) {
+    console.error('❌ Failed to delete mood:', error);
+    showNotification('Failed to delete mood. Please try again.', 'error');
+  }
+};
+
+// Add notification function
+const showNotification = (message: string, type: 'success' | 'error' = 'success') => {
+  const notification = document.createElement('div');
+  notification.textContent = message;
+  notification.style.cssText = `
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    background: ${type === 'success' ? '#22C55E' : '#FF6B6B'};
+    color: white;
+    padding: 12px 24px;
+    border-radius: 8px;
+    z-index: 1000;
+    font-weight: 600;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+  `;
+  
+  document.body.appendChild(notification);
+  
+  setTimeout(() => {
+    if (document.body.contains(notification)) {
+      document.body.removeChild(notification);
+    }
+  }, 3000);
+};
+
   const moodEmojis: { [key: string]: string } = {
     happy: '😊',
     sad: '😢',
@@ -166,6 +218,29 @@ const MoodHistory: React.FC<MoodHistoryProps> = ({ user, onLogout }) => {
                               }}>
                                 {mood.intensity}/10
                               </div>
+                              <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              if (window.confirm('Delete this mood entry?')) {
+                                deleteMood(mood.id);
+                              }
+                            }}
+                            style={{
+                              background: 'transparent',
+                              border: 'none',
+                              color: '#666',
+                              cursor: 'pointer',
+                              fontSize: '14px',
+                              padding: '4px',
+                              borderRadius: '4px',
+                              transition: 'all 0.2s ease'
+                            }}
+                            onMouseEnter={(e) => e.currentTarget.style.color = '#FF6B6B'}
+                            onMouseLeave={(e) => e.currentTarget.style.color = '#666'}
+                            title="Delete mood entry"
+                          >
+                            🗑️
+                          </button>
                               
                               <span style={{ color: '#535353', fontSize: '12px' }}>
                                 {new Date(mood.created_at).toLocaleTimeString('en-US', { 

@@ -1052,6 +1052,31 @@ app.post('/api/moods', authenticateToken, (req, res) => {
   );
 });
 
+// Delete mood entry
+app.delete('/api/moods/:id', authenticateToken, (req, res) => {
+  const { id } = req.params;
+  
+  console.log('🗑️ Deleting mood with ID:', id);
+  
+  db.run(
+    'DELETE FROM moods WHERE id = ? AND user_id = ?',
+    [id, req.user.userId],
+    function(err) {
+      if (err) {
+        console.error('❌ Failed to delete mood:', err);
+        return res.status(500).json({ error: 'Failed to delete mood' });
+      }
+      
+      if (this.changes === 0) {
+        return res.status(404).json({ error: 'Mood not found' });
+      }
+      
+      console.log('✅ Mood deleted successfully');
+      res.json({ message: 'Mood deleted successfully' });
+    }
+  );
+});
+
 // Add favorites table migration
 app.get('/migrate/add-favorites-table', (req, res) => {
   console.log('🔄 Adding favorites table...');
