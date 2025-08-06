@@ -57,6 +57,7 @@ export const moods = {
 };
 
 // Favorites functions
+// Favorites functions
 export const favorites = {
   getAll: async () => {
     const response = await api.get('/favorites');

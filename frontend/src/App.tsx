@@ -266,15 +266,15 @@ function App() {
         />
 
         {/* Favorites Route */}
-                <Route 
-          path="/favorites" 
-          element={
-            user ? 
-            <FavoritesPage 
-              user={user} 
-              onLogout={handleLogout} 
-            /> : 
-            <Navigate to="/login" />
+                    <Route 
+              path="/favorites" 
+              element={
+                user ? 
+                <FavoritesPage 
+                  user={user} 
+                  onLogout={handleLogout} 
+                /> : 
+                <Navigate to="/login" />
           } 
         />
         

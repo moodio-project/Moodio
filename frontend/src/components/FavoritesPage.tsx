@@ -23,8 +23,8 @@ const FavoritesPage: React.FC<FavoritesPageProps> = ({ user, onLogout }) => {
 
   const loadFavorites = async () => {
     try {
-        const response = await favorites.getAll() as any;
-        setUserFavorites(response.favorites || []);
+      const response = await favorites.getAll() as any;
+      setUserFavorites(response.favorites || []);
     } catch (error) {
       console.error('Failed to load favorites:', error);
     } finally {
@@ -39,12 +39,6 @@ const FavoritesPage: React.FC<FavoritesPageProps> = ({ user, onLogout }) => {
     } else {
       alert('Music player not ready. Please wait a moment and try again.');
     }
-  };
-
-  const formatDuration = (ms: number) => {
-    const minutes = Math.floor(ms / 60000);
-    const seconds = Math.floor((ms % 60000) / 1000);
-    return `${minutes}:${seconds.toString().padStart(2, '0')}`;
   };
 
   const removeFavorite = async (trackId: string) => {
