@@ -1023,9 +1023,12 @@ app.post('/api/moods', authenticateToken, (req, res) => {
   
   console.log('🎵 Creating mood:', { mood, intensity, note, userId: req.user.userId });
   
+  // Use explicit local time instead of database CURRENT_TIMESTAMP
+  const now = new Date().toISOString();
+  
   db.run(
-    'INSERT INTO moods (user_id, mood, intensity, note) VALUES (?, ?, ?, ?)',
-    [req.user.userId, mood, intensity, note],
+    'INSERT INTO moods (user_id, mood, intensity, note, created_at) VALUES (?, ?, ?, ?, ?)',
+    [req.user.userId, mood, intensity, note, now],
     function(err) {
       if (err) {
         console.error('❌ Database error:', err);
@@ -1034,45 +1037,10 @@ app.post('/api/moods', authenticateToken, (req, res) => {
       
       console.log('✅ Mood saved with ID:', this.lastID);
       
-      // Get the actual record
-      db.get(
-        'SELECT * FROM moods WHERE id = ?',
-        [this.lastID],
-        (err, row) => {
-          if (err) {
-            console.error('❌ Retrieval error:', err);
-            return res.status(500).json({ error: 'Failed to retrieve mood' });
-          }
-          
-          console.log('✅ Returning mood:', row);
-          res.status(201).json({ mood: row });
-        }
-      );
-    }
-  );
-});
-
-// Delete mood entry
-app.delete('/api/moods/:id', authenticateToken, (req, res) => {
-  const { id } = req.params;
-  
-  console.log('🗑️ Deleting mood with ID:', id);
-  
-  db.run(
-    'DELETE FROM moods WHERE id = ? AND user_id = ?',
-    [id, req.user.userId],
-    function(err) {
-      if (err) {
-        console.error('❌ Failed to delete mood:', err);
-        return res.status(500).json({ error: 'Failed to delete mood' });
-      }
-      
-      if (this.changes === 0) {
-        return res.status(404).json({ error: 'Mood not found' });
-      }
-      
-      console.log('✅ Mood deleted successfully');
-      res.json({ message: 'Mood deleted successfully' });
+      db.get('SELECT * FROM moods WHERE id = ?', [this.lastID], (err, row) => {
+        if (err) return res.status(500).json({ error: 'Failed to retrieve mood' });
+        res.status(201).json({ mood: row });
+      });
     }
   );
 });
