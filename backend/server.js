@@ -1146,19 +1146,23 @@ app.get('/api/health', (req, res) => {
     message: 'Moodio server running!',
     timestamp: new Date().toISOString(),
     port: PORT,
-    environment: process.env.NODE_ENV || 'development'
+    environment: process.env.NODE_ENV || 'development',
+    buildPath: path.join(__dirname, '../frontend/build'),
+    buildExists: require('fs').existsSync(path.join(__dirname, '../frontend/build'))
   });
 });
 
-// Root health check for Render
-app.get('/', (req, res) => {
-  res.json({ 
-    status: 'OK', 
-    message: 'Moodio API is running!',
-    timestamp: new Date().toISOString(),
-    port: PORT
+// Root health check for Render (only in development)
+if (process.env.NODE_ENV !== 'production') {
+  app.get('/', (req, res) => {
+    res.json({ 
+      status: 'OK', 
+      message: 'Moodio API is running!',
+      timestamp: new Date().toISOString(),
+      port: PORT
+    });
   });
-});
+}
 
 // Add this temporary migration route
 app.get('/migrate/add-spotify-columns', (req, res) => {
@@ -1314,13 +1318,15 @@ if (process.env.NODE_ENV === 'production') {
   });
 }
 
-app.listen(PORT, () => {
+app.listen(PORT, '0.0.0.0', () => {
   console.log(`✅ Server running on port ${PORT}`);
   console.log(`✅ Database initialized`);
   console.log(`✅ Spotify integration ready`);
-  console.log(`✅ Health check available at http://localhost:${PORT}/api/health`);
-  console.log(`✅ Root endpoint available at http://localhost:${PORT}/`);
+  console.log(`✅ Environment: ${process.env.NODE_ENV || 'development'}`);
+  console.log(`✅ Health check available at /api/health`);
   if (process.env.NODE_ENV === 'production') {
     console.log(`✅ Serving React app from ${path.join(__dirname, '../frontend/build')}`);
+  } else {
+    console.log(`✅ Root endpoint available at http://localhost:${PORT}/`);
   }
 });

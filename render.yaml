@@ -4,7 +4,7 @@ services:
     env: node
     plan: free
     buildCommand: npm install --prefix backend && npm install --prefix frontend && npm run build --prefix frontend
-    startCommand: cd backend && npm start
+    startCommand: npm start
     envVars:
       - key: NODE_ENV
         value: production

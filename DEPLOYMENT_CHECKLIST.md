@@ -29,7 +29,7 @@
 3. [ ] Set name: `moodio-backend`
 4. [ ] Set environment: `Node`
 5. [ ] Set build command: `npm install --prefix backend && npm install --prefix frontend && npm run build --prefix frontend`
-6. [ ] Set start command: `cd backend && npm start`
+6. [ ] Set start command: `npm start`
 7. [ ] Add all environment variables
 8. [ ] Deploy and wait for completion
 
