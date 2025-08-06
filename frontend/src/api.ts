@@ -56,6 +56,40 @@ export const moods = {
   }
 };
 
+// Favorites functions
+export const favorites = {
+  getAll: async () => {
+    const response = await api.get('/favorites');
+    return response.data;
+  },
+
+  add: async (track: any) => {
+    const favoriteData = {
+      item_type: 'track',
+      item_id: track.id,
+      item_name: track.name,
+      artist_name: track.artists?.[0]?.name || 'Unknown Artist',
+      album_name: track.album?.name || 'Unknown Album',
+      artwork_url: track.album?.images?.[0]?.url || null,
+      track_uri: track.uri
+    };
+    
+    const response = await api.post('/favorites', favoriteData);
+    return response.data;
+  },
+
+  remove: async (trackId: string) => {
+    const response = await api.delete(`/favorites/${trackId}`);
+    return response.data;
+  },
+
+  check: async (trackId: string) => {
+    const response = await api.get('/favorites');
+    const favorites = (response.data as any).favorites || [];
+    return favorites.some((fav: any) => fav.item_id === trackId);
+  }
+};
+
 // Genius API functions - NEW!
 export const genius = {
   // Get song lyrics from Genius
@@ -114,6 +148,7 @@ export const spotify = {
     return response.data;
   }
 };
+
 
 // AI functions
 export const ai = {

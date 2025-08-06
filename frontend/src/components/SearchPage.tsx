@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import Navigation from './Navigation';
 import { spotify } from '../api';
+import HeartButton from './HeartButton';
 
 interface User {
   id: number;
@@ -193,6 +194,9 @@ const SearchPage: React.FC<SearchPageProps> = ({ user, onLogout }) => {
                         <p style={{ color: '#535353', margin: 0, fontSize: '12px' }}>
                           {formatDuration(track.duration_ms)}
                         </p>
+                      </div>
+                      <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+                        <HeartButton track={track} />
                       </div>
                       {/* ✅ FIXED PLAY BUTTON WITH ONCLICK */}
                       <button

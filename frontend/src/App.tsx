@@ -8,6 +8,7 @@ import Profile from './components/Profile';
 import MoodHistory from './components/MoodHistory';
 import SearchPage from './components/SearchPage';
 import ArtistPage from './components/ArtistPage';
+import FavoritesPage from './components/FavoritesPage';
 import LogMoodPage from './components/LogMoodPage'; // ADD THIS IMPORT
 import { auth } from './api';
 
@@ -262,6 +263,19 @@ function App() {
         <Route 
           path="/" 
           element={<Navigate to="/dashboard" />} 
+        />
+
+        {/* Favorites Route */}
+                <Route 
+          path="/favorites" 
+          element={
+            user ? 
+            <FavoritesPage 
+              user={user} 
+              onLogout={handleLogout} 
+            /> : 
+            <Navigate to="/login" />
+          } 
         />
         
         {/* Catch-all Route */}

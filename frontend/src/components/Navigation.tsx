@@ -23,10 +23,10 @@ const Navigation: React.FC<NavigationProps> = ({ user, currentPage, onLogout }) 
   };
 
   const menuItems = [
-    
     { id: 'search', icon: '🔍', label: 'Search', path: '/search' },
     { id: 'mood-log', icon: '✨', label: 'Log Mood', path: '/mood-log' },
     { id: 'mood-history', icon: '📊', label: 'Mood History', path: '/mood-history' },
+    { id: 'favorites', icon: '❤️', label: 'Favorites', path: '/favorites' }, // ADD THIS LINE
     { id: 'profile', icon: '👤', label: 'Profile', path: '/profile' }
   ];
 

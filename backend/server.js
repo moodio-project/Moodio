@@ -1052,6 +1052,99 @@ app.post('/api/moods', authenticateToken, (req, res) => {
   );
 });
 
+// Add favorites table migration
+app.get('/migrate/add-favorites-table', (req, res) => {
+  console.log('🔄 Adding favorites table...');
+  
+  db.run(`
+    CREATE TABLE IF NOT EXISTS favorites (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      user_id INTEGER,
+      item_type TEXT,
+      item_id TEXT,
+      item_name TEXT,
+      artist_name TEXT,
+      album_name TEXT,
+      artwork_url TEXT,
+      track_uri TEXT,
+      created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+      FOREIGN KEY (user_id) REFERENCES users (id),
+      UNIQUE(user_id, item_id)
+    )
+  `, (err) => {
+    if (err) {
+      console.error('Error creating favorites table:', err);
+      return res.status(500).json({ error: 'Failed to create favorites table' });
+    }
+    
+    console.log('✅ Favorites table created successfully!');
+    res.json({ success: true, message: 'Favorites table created!' });
+  });
+});
+
+// ===== FAVORITES ROUTES =====
+
+// Get user's favorites
+app.get('/api/favorites', authenticateToken, (req, res) => {
+  db.all(
+    'SELECT * FROM favorites WHERE user_id = ? ORDER BY created_at DESC',
+    [req.user.userId],
+    (err, favorites) => {
+      if (err) {
+        console.error('❌ Failed to get favorites:', err);
+        return res.status(500).json({ error: 'Failed to get favorites' });
+      }
+      res.json({ favorites });
+    }
+  );
+});
+
+// Add to favorites
+app.post('/api/favorites', authenticateToken, (req, res) => {
+  const { item_type, item_id, item_name, artist_name, album_name, artwork_url, track_uri } = req.body;
+  
+  console.log('❤️ Adding to favorites:', { item_name, artist_name });
+  
+  db.run(
+    `INSERT INTO favorites (user_id, item_type, item_id, item_name, artist_name, album_name, artwork_url, track_uri) 
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+    [req.user.userId, item_type, item_id, item_name, artist_name, album_name, artwork_url, track_uri],
+    function(err) {
+      if (err) {
+        if (err.message.includes('UNIQUE constraint failed')) {
+          return res.status(400).json({ error: 'Already in favorites' });
+        }
+        console.error('❌ Failed to add favorite:', err);
+        return res.status(500).json({ error: 'Failed to add to favorites' });
+      }
+      
+      console.log('✅ Added to favorites with ID:', this.lastID);
+      res.status(201).json({ message: 'Added to favorites', id: this.lastID });
+    }
+  );
+});
+
+// Remove from favorites
+app.delete('/api/favorites/:itemId', authenticateToken, (req, res) => {
+  const { itemId } = req.params;
+  
+  console.log('💔 Removing from favorites:', itemId);
+  
+  db.run(
+    'DELETE FROM favorites WHERE user_id = ? AND item_id = ?',
+    [req.user.userId, itemId],
+    function(err) {
+      if (err) {
+        console.error('❌ Failed to remove favorite:', err);
+        return res.status(500).json({ error: 'Failed to remove from favorites' });
+      }
+      
+      console.log('✅ Removed from favorites');
+      res.json({ message: 'Removed from favorites' });
+    }
+  );
+});
+
 // Health check
 app.get('/api/health', (req, res) => {
   res.json({ 

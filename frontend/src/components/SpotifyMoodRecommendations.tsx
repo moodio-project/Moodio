@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { spotify, moods as moodsApi } from '../api';
+import HeartButton from './HeartButton';
 
 interface SpotifyMoodRecommendationsProps {
   user: any;
@@ -370,29 +371,32 @@ const SpotifyMoodRecommendations: React.FC<SpotifyMoodRecommendationsProps> = ({
                 }}>
                   {getMoodEmoji(currentMoodFilter)}
                 </div>
-                <button
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    playTrack(track.uri, track.name);
-                  }}
-                  style={{
-                    background: getMoodColor(currentMoodFilter),
-                    border: 'none',
-                    borderRadius: '50%',
-                    width: '32px',
-                    height: '32px',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    cursor: 'pointer',
-                    fontSize: '12px',
-                    transition: 'all 0.2s ease'
-                  }}
-                  onMouseEnter={(e) => e.currentTarget.style.transform = 'scale(1.1)'}
-                  onMouseLeave={(e) => e.currentTarget.style.transform = 'scale(1)'}
-                >
-                  ▶️
-                </button>
+                <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+        <HeartButton track={track} size="small" />
+        <button
+          onClick={(e) => {
+            e.stopPropagation();
+            playTrack(track.uri, track.name);
+          }}
+          style={{
+            background: getMoodColor(currentMoodFilter),
+            border: 'none',
+            borderRadius: '50%',
+            width: '32px',
+            height: '32px',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            cursor: 'pointer',
+            fontSize: '12px',
+            transition: 'all 0.2s ease'
+          }}
+          onMouseEnter={(e) => e.currentTarget.style.transform = 'scale(1.1)'}
+          onMouseLeave={(e) => e.currentTarget.style.transform = 'scale(1)'}
+        >
+          ▶️
+        </button>
+          </div>
               </div>
             ))}
           </div>
