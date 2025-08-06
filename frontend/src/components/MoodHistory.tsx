@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import Navigation from './Navigation';
+import { useNavigate } from 'react-router-dom';
 import { moods } from '../api';
 
 interface User {
@@ -25,6 +26,7 @@ interface MoodHistoryProps {
 }
 
 const MoodHistory: React.FC<MoodHistoryProps> = ({ user, onLogout }) => {
+  const navigate = useNavigate();
   const [userMoods, setUserMoods] = useState<Mood[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -156,8 +158,9 @@ const showNotification = (message: string, type: 'success' | 'error' = 'success'
               Start tracking your emotions to see patterns over time
             </p>
             <button 
-              onClick={() => window.location.href = '/dashboard'}
               className="btn-primary"
+              onClick={() => navigate('/mood-log')}
+              style={{ cursor: 'pointer' }}
             >
               Log Your First Mood
             </button>
