@@ -5,6 +5,7 @@ const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const SpotifyWebApi = require('spotify-web-api-node');
 const Genius = require('genius-lyrics').Client;
+const path = require('path');
 require('dotenv').config();
 
 const app = express();
@@ -1302,10 +1303,24 @@ app.post('/test/store-token', (req, res) => {
   });
 });
 
+// Serve static files from React build
+if (process.env.NODE_ENV === 'production') {
+  // Serve static files from the React build
+  app.use(express.static(path.join(__dirname, '../frontend/build')));
+  
+  // Handle React routing, return all requests to React app
+  app.get('*', (req, res) => {
+    res.sendFile(path.join(__dirname, '../frontend/build', 'index.html'));
+  });
+}
+
 app.listen(PORT, () => {
   console.log(`✅ Server running on port ${PORT}`);
   console.log(`✅ Database initialized`);
   console.log(`✅ Spotify integration ready`);
   console.log(`✅ Health check available at http://localhost:${PORT}/api/health`);
   console.log(`✅ Root endpoint available at http://localhost:${PORT}/`);
+  if (process.env.NODE_ENV === 'production') {
+    console.log(`✅ Serving React app from ${path.join(__dirname, '../frontend/build')}`);
+  }
 });

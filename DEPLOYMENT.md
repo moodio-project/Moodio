@@ -12,7 +12,7 @@
 2. **Configure the service:**
    - **Name**: `moodio-backend`
    - **Environment**: `Node`
-   - **Build Command**: `npm install --prefix backend`
+   - **Build Command**: `npm install --prefix backend && npm install --prefix frontend && npm run build --prefix frontend`
    - **Start Command**: `cd backend && npm start`
 
 3. **Set Environment Variables:**

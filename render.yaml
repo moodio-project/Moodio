@@ -3,7 +3,7 @@ services:
     name: moodio-backend
     env: node
     plan: free
-    buildCommand: npm install --prefix backend
+    buildCommand: npm install --prefix backend && npm install --prefix frontend && npm run build --prefix frontend
     startCommand: cd backend && npm start
     envVars:
       - key: NODE_ENV

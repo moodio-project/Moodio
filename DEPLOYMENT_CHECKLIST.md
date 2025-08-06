@@ -23,24 +23,17 @@
 
 ## Render Deployment Steps
 
-### Backend Service
+### Backend Service (Includes Frontend)
 1. [ ] Create new Web Service
 2. [ ] Connect GitHub repository
 3. [ ] Set name: `moodio-backend`
 4. [ ] Set environment: `Node`
-5. [ ] Set build command: `npm install --prefix backend`
+5. [ ] Set build command: `npm install --prefix backend && npm install --prefix frontend && npm run build --prefix frontend`
 6. [ ] Set start command: `cd backend && npm start`
 7. [ ] Add all environment variables
 8. [ ] Deploy and wait for completion
 
-### Frontend Service
-1. [ ] Create new Static Site
-2. [ ] Connect GitHub repository
-3. [ ] Set name: `moodio-frontend`
-4. [ ] Set build command: `npm install --prefix frontend && npm run build --prefix frontend`
-5. [ ] Set publish directory: `frontend/build`
-6. [ ] Add environment variable: `REACT_APP_API_URL`
-7. [ ] Deploy and wait for completion
+*Note: Frontend is now included in the backend deployment - no separate frontend service needed*
 
 ## Post-Deployment Verification
 
