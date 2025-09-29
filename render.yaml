@@ -1,15 +1,30 @@
 services:
+  # PostgreSQL Database
+  - type: pserv
+    name: moodio-db
+    env: docker
+    plan: free
+    disk:
+      name: data
+      mountPath: /var/lib/postgresql/data
+      sizeGB: 1
+
+  # Backend API Service
   - type: web
     name: moodio-backend
     env: node
     plan: free
-    buildCommand: npm install --prefix backend && npm install --prefix frontend && npm run build --prefix frontend
-    startCommand: npm start
+    buildCommand: cd backend && npm install
+    startCommand: cd backend && node server.js
     envVars:
       - key: NODE_ENV
         value: production
       - key: PORT
         value: 10000
+      - key: DATABASE_URL
+        fromDatabase:
+          name: moodio-db
+          property: connectionString
       - key: JWT_SECRET
         generateValue: true
       - key: SPOTIFY_CLIENT_ID
@@ -21,4 +36,4 @@ services:
       - key: OPENAI_API_KEY
         sync: false
       - key: GENIUS_API_KEY
-        sync: false 
+        sync: false
