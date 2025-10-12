@@ -21,6 +21,7 @@
     "jsonwebtoken": "^9.0.2",
     "node-fetch": "^2.7.0",
     "openai": "^5.11.0",
+    "pg": "^8.16.3",
     "spotify-web-api-node": "^5.0.2",
     "sqlite3": "^5.1.7"
   },
