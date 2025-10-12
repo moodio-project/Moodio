@@ -1,18 +1,11 @@
-services:
-  # PostgreSQL Database
-  - type: pserv
-    name: moodio-db
-    env: docker
+databases:
+  - name: moodio-db
     plan: free
-    disk:
-      name: data
-      mountPath: /var/lib/postgresql/data
-      sizeGB: 1
 
-  # Backend API Service
+services:
   - type: web
     name: moodio-backend
-    env: node
+    runtime: node
     plan: free
     buildCommand: cd backend && npm install
     startCommand: cd backend && node server.js
