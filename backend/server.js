@@ -6,7 +6,8 @@ const Genius = require("genius-lyrics").Client;
 require("dotenv").config();
 
 // Import routes
-const spotifyAuthRoutes = require('./routes/spotifyAuth');
+const spotifyAuth = require('./routes/spotifyAuth');
+spotifyAuth.setDb(db);
 
 const app = express();
 const PORT = process.env.PORT || 3001;
@@ -44,7 +45,7 @@ app.use(cors());
 app.use(express.json());
 
 // Mount routes
-app.use('/auth/spotify', spotifyAuthRoutes);
+app.use('/auth/spotify', spotifyAuth.router);
 
 // Helper function for mood descriptions
 function getMoodDescription(mood, valence, energy) {
