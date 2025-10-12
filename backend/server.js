@@ -1,12 +1,12 @@
 const express = require("express");
 const cors = require("cors");
-const sqlite3 = require("sqlite3").verbose();
-const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
-const SpotifyWebApi = require("spotify-web-api-node");
-const Genius = require("genius-lyrics").Client;
 const path = require("path");
+const Genius = require("genius-lyrics").Client;
 require("dotenv").config();
+
+// Import routes
+const spotifyAuthRoutes = require('./routes/spotifyAuth');
 
 const app = express();
 const PORT = process.env.PORT || 3001;
@@ -38,6 +38,13 @@ db.connect((err, client, release) => {
 const userTokens = new Map();
 // Initialize Genius API
 const genius = new Genius(process.env.GENIUS_API_KEY);
+
+// Configure Express middleware
+app.use(cors());
+app.use(express.json());
+
+// Mount routes
+app.use('/auth/spotify', spotifyAuthRoutes);
 
 // Helper function for mood descriptions
 function getMoodDescription(mood, valence, energy) {
@@ -257,35 +264,7 @@ app.get("/debug/oauth-url", (req, res) => {
   });
 });
 
-// ===== SPOTIFY OAUTH ROUTES =====
-
-// Spotify OAuth login
-app.get("/auth/spotify", (req, res) => {
-  console.log("🔍 Starting Spotify OAuth with:");
-  console.log("Client ID:", process.env.SPOTIFY_CLIENT_ID);
-  console.log("Redirect URI:", process.env.SPOTIFY_REDIRECT_URI);
-  console.log("SpotifyApi Redirect URI:", spotifyApi.getRedirectURI());
-
-  const scopes = [
-    "user-read-private",
-    "user-read-email",
-    "user-top-read",
-    "user-read-recently-played",
-    "user-read-currently-playing",
-    "user-read-playback-state",
-    "user-modify-playback-state",
-    "streaming",
-  ];
-
-  const authorizeURL = spotifyApi.createAuthorizeURL(scopes, "moodio-state");
-  console.log("🔗 Generated OAuth URL:", authorizeURL);
-
-  res.redirect(authorizeURL);
-});
-
-// Spotify OAuth callback
-app.get(SPOTIFY_CALLBACK_PATH, async (req, res) => {
-  const { code, error } = req.query;
+// ===== API ROUTES ===== 
 
   console.log("📝 Spotify callback received:", { code: !!code, error });
 
