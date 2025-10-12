@@ -154,10 +154,13 @@ const createTables = async () => {
 createTables();
 
 // Initialize Spotify API
+const SPOTIFY_CALLBACK_PATH = "/auth/spotify/callback";
 const spotifyApi = new SpotifyWebApi({
   clientId: process.env.SPOTIFY_CLIENT_ID,
   clientSecret: process.env.SPOTIFY_CLIENT_SECRET,
-  redirectUri: process.env.SPOTIFY_REDIRECT_URI,
+  redirectUri:
+    process.env.SPOTIFY_REDIRECT_URI ||
+    `http://localhost:${process.env.PORT}${SPOTIFY_CALLBACK_PATH}`,
 });
 
 // Log Spotify configuration on startup
@@ -167,7 +170,7 @@ console.log(
   "Client Secret:",
   process.env.SPOTIFY_CLIENT_SECRET ? "Set" : "Missing"
 );
-console.log("Redirect URI:", process.env.SPOTIFY_REDIRECT_URI);
+console.log("Redirect URI:", spotifyApi.getRedirectURI());
 
 // Get Spotify access token using client credentials
 const getSpotifyToken = async () => {
@@ -281,9 +284,7 @@ app.get("/auth/spotify", (req, res) => {
 });
 
 // Spotify OAuth callback
-// ===== REPLACE YOUR ENTIRE Spotify OAuth callback in server.js =====
-
-app.get("/auth/spotify/callback", async (req, res) => {
+app.get(SPOTIFY_CALLBACK_PATH, async (req, res) => {
   const { code, error } = req.query;
 
   console.log("📝 Spotify callback received:", { code: !!code, error });
