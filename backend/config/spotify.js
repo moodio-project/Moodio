@@ -40,6 +40,10 @@ const getSpotifyToken = async () => {
 };
 
 // Initialize Spotify token on module load
-getSpotifyToken();
+getSpotifyToken().catch((err) => {
+  console.error(
+    "⚠️ Spotify token failed on startup - app will retry when needed",
+  );
+});
 
 module.exports = { spotifyApi, getSpotifyToken };

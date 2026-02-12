@@ -42,6 +42,22 @@ db.serialize(() => {
     FOREIGN KEY (user_id) REFERENCES users (id)
   )`);
 
+  // Favorites table
+  db.run(`CREATE TABLE IF NOT EXISTS favorites (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    user_id INTEGER,
+    item_type TEXT NOT NULL,
+    item_id TEXT NOT NULL,
+    item_name TEXT,
+    artist_name TEXT,
+    album_name TEXT,
+    artwork_url TEXT,
+    track_uri TEXT,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (user_id) REFERENCES users (id),
+    UNIQUE(user_id, item_id)
+  )`);
+
   // Songs table
   db.run(`CREATE TABLE IF NOT EXISTS songs (
     id TEXT PRIMARY KEY,
