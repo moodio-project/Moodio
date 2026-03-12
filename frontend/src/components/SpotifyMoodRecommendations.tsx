@@ -106,34 +106,76 @@ const SpotifyMoodRecommendations: React.FC<SpotifyMoodRecommendationsProps> = ({
 
   const getSpotifyMoodRecommendations = async (mood: string) => {
     try {
-      console.log('🎵 Getting DIRECT search recommendations for mood:', mood);
-      
-      const moodSearchTerms: { [key: string]: string[] } = {
-        happy: ['upbeat pop', 'feel good music', 'happy songs', 'uplifting music'],
-        sad: ['sad songs', 'melancholy music', 'emotional ballads', 'heartbreak songs'],
-        energetic: ['workout music', 'high energy', 'pump up songs', 'dance music'],
-        calm: ['chill music', 'relaxing songs', 'ambient music', 'peaceful music'],
-        excited: ['party music', 'celebration songs', 'exciting music', 'hype music']
+      // Genre-specific queries per mood — rotate through them for variety
+      const moodGenreQueries: { [key: string]: string[] } = {
+        happy: [
+          'genre:pop year:2022-2025',
+          'genre:dance-pop year:2022-2025',
+          'feel good hits 2024',
+          'genre:funk year:2020-2025'
+        ],
+        sad: [
+          'genre:sad-indie year:2022-2025',
+          'genre:emo year:2022-2025',
+          'emotional ballads 2024',
+          'genre:singer-songwriter year:2022-2025'
+        ],
+        energetic: [
+          'genre:hip-hop year:2022-2025',
+          'genre:trap year:2022-2025',
+          'genre:edm year:2022-2025',
+          'genre:rap year:2023-2025'
+        ],
+        calm: [
+          'genre:lo-fi year:2022-2025',
+          'genre:chill year:2022-2025',
+          'genre:acoustic year:2022-2025',
+          'relaxing indie 2024'
+        ],
+        excited: [
+          'genre:electronic year:2022-2025',
+          'genre:house year:2022-2025',
+          'party hits 2024',
+          'genre:pop-dance year:2022-2025'
+        ],
+        anxious: [
+          'genre:alternative year:2022-2025',
+          'genre:indie-rock year:2022-2025',
+          'genre:art-rock year:2022-2025',
+          'moody indie 2024'
+        ],
+        angry: [
+          'genre:rock year:2022-2025',
+          'genre:metal year:2022-2025',
+          'genre:punk year:2022-2025',
+          'hard rap 2024'
+        ],
+        tired: [
+          'genre:ambient year:2022-2025',
+          'genre:sleep year:2022-2025',
+          'genre:classical year:2022-2025',
+          'soft acoustic 2024'
+        ]
       };
-      
-      const searchTerms = moodSearchTerms[mood] || moodSearchTerms.happy;
-      const randomTerm = searchTerms[Math.floor(Math.random() * searchTerms.length)];
-      
-      console.log('🎵 DIRECT search for:', randomTerm);
-      
-      // IMPORTANT: Use spotify.search, NOT spotify.getRecommendations
-      const searchResult = await spotify.search(randomTerm, 'track', 12) as any;
-      console.log('✅ DIRECT search result:', searchResult);
-      
+
+      const queries = moodGenreQueries[mood] || moodGenreQueries.happy;
+      const query = queries[Math.floor(Math.random() * queries.length)];
+
+      console.log('🎵 Searching popular tracks for mood:', mood, '— query:', query);
+
+      const searchResult = await spotify.search(query, 'track', 20) as any;
+
       if (searchResult.tracks?.items?.length > 0) {
-        const shuffled = [...searchResult.tracks.items].sort(() => Math.random() - 0.5);
-        return shuffled.slice(0, 8);
+        // Sort by popularity descending, take top 8
+        const sorted = [...searchResult.tracks.items]
+          .filter((t: any) => t.popularity > 0)
+          .sort((a: any, b: any) => b.popularity - a.popularity);
+        return sorted.slice(0, 8);
       }
-      
+
       return [];
-      
     } catch (error) {
-      console.error('❌ DIRECT search failed:', error);
+      console.error('❌ Mood recommendations search failed:', error);
       return [];
     }
   };
@@ -286,37 +328,30 @@ const SpotifyMoodRecommendations: React.FC<SpotifyMoodRecommendationsProps> = ({
           
           {/* Mood Filter Buttons */}
           <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', marginBottom: '20px' }}>
-            {['happy', 'sad', 'excited', 'calm', 'energetic'].map((mood) => (
+            {['happy', 'sad', 'excited', 'calm', 'energetic', 'anxious', 'angry', 'tired'].map((mood) => (
               <button
                 key={mood}
                 onClick={async () => {
                   setLoading(true);
-                  try {
-                    const recs = await getSpotifyMoodRecommendations(mood);
-                    setRecommendations(recs);
-                    setCurrentMoodFilter(mood);
-                  } catch (error) {
-                    console.error('Failed to load recommendations:', error);
-                    // Fallback to direct search if API fails
-                    const fallbackSearch = await spotify.search(`${mood} music`, 'track', 8) as any;
-                    setRecommendations(fallbackSearch.tracks?.items || []);
-                    setCurrentMoodFilter(mood);
-                  }
+                  const recs = await getSpotifyMoodRecommendations(mood);
+                  setRecommendations(recs);
+                  setCurrentMoodFilter(mood);
                   setLoading(false);
                 }}
                 style={{
                   background: currentMoodFilter === mood ? getMoodColor(mood) : 'rgba(255,255,255,0.1)',
                   color: currentMoodFilter === mood ? 'white' : '#B3B3B3',
-                  border: 'none',
-                  padding: '6px 12px',
-                  borderRadius: '16px',
-                  fontSize: '12px',
+                  border: `1px solid ${currentMoodFilter === mood ? getMoodColor(mood) : 'transparent'}`,
+                  padding: '6px 14px',
+                  borderRadius: '20px',
+                  fontSize: '13px',
                   fontWeight: '600',
                   cursor: 'pointer',
                   textTransform: 'capitalize',
                   display: 'flex',
                   alignItems: 'center',
-                  gap: '4px'
+                  gap: '4px',
+                  transition: 'all 0.2s ease'
                 }}
               >
                 {getMoodEmoji(mood)} {mood}
@@ -361,16 +396,33 @@ const SpotifyMoodRecommendations: React.FC<SpotifyMoodRecommendationsProps> = ({
                     {track.artists?.[0]?.name} • {formatDuration(track.duration_ms || 180000)}
                   </p>
                 </div>
-                <div style={{
-                  background: `${getMoodColor(currentMoodFilter)}20`,
-                  color: getMoodColor(currentMoodFilter),
-                  padding: '2px 8px',
-                  borderRadius: '12px',
-                  fontSize: '10px',
-                  fontWeight: '600'
-                }}>
-                  {getMoodEmoji(currentMoodFilter)}
-                </div>
+                {track.popularity > 0 && (
+                  <div style={{
+                    display: 'flex',
+                    flexDirection: 'column',
+                    alignItems: 'center',
+                    gap: '2px',
+                    minWidth: '44px'
+                  }}>
+                    <div style={{
+                      width: '36px',
+                      height: '4px',
+                      background: '#333',
+                      borderRadius: '2px',
+                      overflow: 'hidden'
+                    }}>
+                      <div style={{
+                        height: '100%',
+                        width: `${track.popularity}%`,
+                        background: getMoodColor(currentMoodFilter),
+                        borderRadius: '2px'
+                      }} />
+                    </div>
+                    <span style={{ color: '#B3B3B3', fontSize: '10px' }}>
+                      {track.popularity}
+                    </span>
+                  </div>
+                )}
                 <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
         <HeartButton track={track} size="small" />
         <button
