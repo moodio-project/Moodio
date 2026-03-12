@@ -17,7 +17,7 @@ interface ArtistPageProps {
     hasPremium?: boolean;
   }
 
-const ArtistPage: React.FC<ArtistPageProps> = ({ user, onLogout }) => {
+const ArtistPage: React.FC<ArtistPageProps> = ({ user, onLogout, spotifyToken }) => {
   const { artistId } = useParams<{ artistId: string }>();
   const navigate = useNavigate();
   const [artist, setArtist] = useState<any>(null);
@@ -29,26 +29,50 @@ const ArtistPage: React.FC<ArtistPageProps> = ({ user, onLogout }) => {
 
   useEffect(() => {
     if (artistId) {
-      loadEnhancedArtistData(artistId);
+      loadArtistData(artistId);
     }
-  }, [artistId]);
+  }, [artistId, spotifyToken]);
 
-  const loadEnhancedArtistData = async (id: string) => {
+  const loadArtistData = async (id: string) => {
     setLoading(true);
     console.log('🔍 Loading artist data for ID:', id);
-    
-    try {
-      // Use the existing enhanced route from server.js
-      const response = await fetch(`http://localhost:3001/api/spotify/artist/${id}/enhanced`, {
-        headers: {
-          'Authorization': `Bearer ${localStorage.getItem('token')}`
+
+    // Use the user's OAuth token directly for full artist data
+    const token = spotifyToken || localStorage.getItem('spotify_token');
+
+    if (token) {
+      try {
+        const [artistResponse, topTracksResponse] = await Promise.all([
+          fetch(`https://api.spotify.com/v1/artists/${id}`, {
+            headers: { Authorization: `Bearer ${token}` }
+          }),
+          fetch(`https://api.spotify.com/v1/artists/${id}/top-tracks?market=US`, {
+            headers: { Authorization: `Bearer ${token}` }
+          })
+        ]);
+
+        if (artistResponse.ok) {
+          const artistData = await artistResponse.json();
+          const tracksData = topTracksResponse.ok ? await topTracksResponse.json() : { tracks: [] };
+          console.log('✅ Artist data from Spotify:', artistData.name, 'followers:', artistData.followers?.total, 'tracks:', tracksData.tracks?.length);
+          setArtist(artistData);
+          setTopTracks(tracksData.tracks || []);
+          setLoading(false);
+          return;
         }
+      } catch (error) {
+        console.warn('⚠️ Direct Spotify call failed, falling back to backend:', error);
+      }
+    }
+
+    // Fallback: use the backend route
+    try {
+      const response = await fetch(`http://localhost:3001/api/spotify/artist/${id}/enhanced`, {
+        headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
       });
-      
+
       if (response.ok) {
         const data = await response.json();
-        console.log('✅ Artist data received:', data);
-        
         setArtist(data.spotify);
         setTopTracks(data.spotify.top_tracks || []);
         setGeniusData(data.genius);
@@ -56,7 +80,6 @@ const ArtistPage: React.FC<ArtistPageProps> = ({ user, onLogout }) => {
       } else {
         throw new Error(`HTTP ${response.status}: ${response.statusText}`);
       }
-      
     } catch (error) {
       console.error('❌ Failed to load artist data:', error);
     } finally {

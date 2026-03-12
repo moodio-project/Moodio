@@ -6,6 +6,31 @@ const { spotifyApi, getSpotifyToken } = require("../config/spotify");
 // userTokens is passed in via the factory function at the bottom
 let userTokens;
 
+// Helper: return a valid access token, refreshing if expired/expiring soon
+async function getValidUserToken(userId) {
+  const userData = userTokens.get(userId);
+  if (!userData) return null;
+
+  const fiveMinutes = 5 * 60 * 1000;
+  const needsRefresh = !userData.expires_at || Date.now() >= userData.expires_at - fiveMinutes;
+
+  if (needsRefresh && userData.refresh_token) {
+    try {
+      spotifyApi.setRefreshToken(userData.refresh_token);
+      const data = await spotifyApi.refreshAccessToken();
+      userData.access_token = data.body.access_token;
+      userData.expires_at = Date.now() + data.body.expires_in * 1000;
+      userTokens.set(userId, userData);
+      console.log("🔄 Spotify token refreshed for user:", userId);
+    } catch (err) {
+      console.error("❌ Token refresh failed:", err.message);
+      return null;
+    }
+  }
+
+  return userData.access_token;
+}
+
 // ===== TOKEN ROUTES =====
 
 // Get user's access token for Web Playback SDK
@@ -165,35 +190,32 @@ router.get("/search", authenticateToken, async (req, res) => {
 router.get("/artist/:id/enhanced", authenticateToken, async (req, res) => {
   try {
     const { id: artistId } = req.params;
-    const userSpotifyData = userTokens.get(req.user.userId);
+    const accessToken = await getValidUserToken(req.user.userId);
 
-    if (!userSpotifyData) {
+    if (!accessToken) {
       return res.status(401).json({ error: "No Spotify token available" });
     }
 
-    // Get basic Spotify artist data
     const [artistResponse, topTracksResponse] = await Promise.all([
       fetch(`https://api.spotify.com/v1/artists/${artistId}`, {
-        headers: { Authorization: `Bearer ${userSpotifyData.access_token}` },
+        headers: { Authorization: `Bearer ${accessToken}` },
       }),
-      fetch(
-        `https://api.spotify.com/v1/artists/${artistId}/top-tracks?market=US`,
-        {
-          headers: { Authorization: `Bearer ${userSpotifyData.access_token}` },
-        },
-      ),
+      fetch(`https://api.spotify.com/v1/artists/${artistId}/top-tracks?market=US`, {
+        headers: { Authorization: `Bearer ${accessToken}` },
+      }),
     ]);
 
-    const spotifyArtist = await artistResponse.json();
-    const topTracksData = await topTracksResponse.json();
+    if (!artistResponse.ok) {
+      console.error("❌ Spotify artist fetch failed:", artistResponse.status);
+      return res.status(artistResponse.status).json({ error: "Failed to fetch artist from Spotify" });
+    }
 
-    // Genius integration temporarily disabled
-    let geniusData = null;
-    console.log("🔍 Genius integration temporarily disabled for stability");
+    const spotifyArtist = await artistResponse.json();
+    const topTracksData = topTracksResponse.ok ? await topTracksResponse.json() : { tracks: [] };
 
     res.json({
       spotify: { ...spotifyArtist, top_tracks: topTracksData.tracks || [] },
-      genius: geniusData,
+      genius: null,
       mood_analysis: null,
     });
   } catch (error) {
@@ -248,19 +270,20 @@ router.get("/audio-features/:trackId", authenticateToken, async (req, res) => {
 // Get album tracks
 router.get("/album/:albumId/tracks", authenticateToken, async (req, res) => {
   const { albumId } = req.params;
-  const userSpotifyData = userTokens.get(req.user.userId);
-
-  if (!userSpotifyData) {
-    return res.status(401).json({ error: "No Spotify token found" });
-  }
 
   try {
+    const accessToken = await getValidUserToken(req.user.userId);
+
+    if (!accessToken) {
+      return res.status(401).json({ error: "No Spotify token found" });
+    }
+
     const [albumResponse, tracksResponse] = await Promise.all([
       fetch(`https://api.spotify.com/v1/albums/${albumId}`, {
-        headers: { Authorization: `Bearer ${userSpotifyData.access_token}` },
+        headers: { Authorization: `Bearer ${accessToken}` },
       }),
       fetch(`https://api.spotify.com/v1/albums/${albumId}/tracks?limit=50`, {
-        headers: { Authorization: `Bearer ${userSpotifyData.access_token}` },
+        headers: { Authorization: `Bearer ${accessToken}` },
       }),
     ]);
 
