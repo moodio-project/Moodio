@@ -99,6 +99,21 @@ db.serialize(() => {
     FOREIGN KEY (song_id) REFERENCES songs (id)
   )`);
 
+  // Migrations: add columns that may not exist in older databases
+  const migrations = [
+    "ALTER TABLE moods ADD COLUMN song_id TEXT",
+    "ALTER TABLE moods ADD COLUMN song_name TEXT",
+    "ALTER TABLE moods ADD COLUMN artist_name TEXT",
+  ];
+  migrations.forEach((sql) => {
+    db.run(sql, (err) => {
+      // Ignore "duplicate column" errors — column already exists
+      if (err && !err.message.includes("duplicate column")) {
+        console.error("Migration error:", err.message);
+      }
+    });
+  });
+
   console.log("✅ Database tables initialized");
 });
 
