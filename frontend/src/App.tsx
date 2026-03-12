@@ -9,6 +9,7 @@ import Profile from './components/Profile';
 import MoodHistory from './components/MoodHistory';
 import SearchPage from './components/SearchPage';
 import ArtistPage from './components/ArtistPage';
+import AlbumPage from './components/AlbumPage';
 import FavoritesPage from './components/FavoritesPage';
 import LogMoodPage from './components/LogMoodPage'; // ADD THIS IMPORT
 import { auth } from './api';
@@ -234,6 +235,19 @@ function App() {
           } 
         />
         
+        {/* Album Detail Route */}
+        <Route
+          path="/album/:albumId"
+          element={
+            user ?
+            <AlbumPage
+              user={user}
+              onLogout={handleLogout}
+            /> :
+            <Navigate to="/login" />
+          }
+        />
+
         {/* Log Mood Route - FIXED! */}
         <Route 
           path="/mood-log" 

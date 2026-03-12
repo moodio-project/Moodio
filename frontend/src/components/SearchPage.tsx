@@ -261,7 +261,7 @@ const SearchPage: React.FC<SearchPageProps> = ({ user, onLogout }) => {
                     onClick={() => window.location.href = `/artist/${artist.id}`}
                   >
                     <img
-                      src={artist.images[0]?.url}
+                      src={artist.images[0]?.url || 'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><circle cx="50" cy="50" r="50" fill="%23282828"/><circle cx="50" cy="38" r="18" fill="%23535353"/><ellipse cx="50" cy="85" rx="28" ry="20" fill="%23535353"/></svg>'}
                       alt={artist.name}
                       style={{
                         width: '120px',
@@ -270,6 +270,9 @@ const SearchPage: React.FC<SearchPageProps> = ({ user, onLogout }) => {
                         objectFit: 'cover',
                         marginBottom: '16px',
                         boxShadow: '0 8px 32px rgba(0, 0, 0, 0.3)'
+                      }}
+                      onError={(e) => {
+                        e.currentTarget.src = 'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><circle cx="50" cy="50" r="50" fill="%23282828"/><circle cx="50" cy="38" r="18" fill="%23535353"/><ellipse cx="50" cy="85" rx="28" ry="20" fill="%23535353"/></svg>';
                       }}
                     />
                     <h4 style={{ color: 'white', margin: '0 0 8px 0', fontSize: '18px' }}>
@@ -314,6 +317,7 @@ const SearchPage: React.FC<SearchPageProps> = ({ user, onLogout }) => {
                       }}
                       onMouseEnter={(e) => e.currentTarget.style.background = '#282828'}
                       onMouseLeave={(e) => e.currentTarget.style.background = '#181818'}
+                      onClick={() => window.location.href = `/album/${album.id}`}
                     >
                       <img
                         src={album.images[0]?.url}

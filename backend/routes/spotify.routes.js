@@ -245,6 +245,45 @@ router.get("/audio-features/:trackId", authenticateToken, async (req, res) => {
   }
 });
 
+// Get album tracks
+router.get("/album/:albumId/tracks", authenticateToken, async (req, res) => {
+  const { albumId } = req.params;
+  const userSpotifyData = userTokens.get(req.user.userId);
+
+  if (!userSpotifyData) {
+    return res.status(401).json({ error: "No Spotify token found" });
+  }
+
+  try {
+    const [albumResponse, tracksResponse] = await Promise.all([
+      fetch(`https://api.spotify.com/v1/albums/${albumId}`, {
+        headers: { Authorization: `Bearer ${userSpotifyData.access_token}` },
+      }),
+      fetch(`https://api.spotify.com/v1/albums/${albumId}/tracks?limit=50`, {
+        headers: { Authorization: `Bearer ${userSpotifyData.access_token}` },
+      }),
+    ]);
+
+    const album = await albumResponse.json();
+    const tracksData = await tracksResponse.json();
+
+    res.json({
+      album: {
+        id: album.id,
+        name: album.name,
+        artists: album.artists,
+        images: album.images,
+        release_date: album.release_date,
+        total_tracks: album.total_tracks,
+      },
+      tracks: tracksData.items || [],
+    });
+  } catch (error) {
+    console.error("Get album tracks error:", error);
+    res.status(500).json({ error: "Failed to fetch album tracks" });
+  }
+});
+
 // ===== RECOMMENDATIONS =====
 
 // Get user's top tracks

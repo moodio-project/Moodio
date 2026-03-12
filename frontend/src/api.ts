@@ -150,6 +150,11 @@ export const spotify = {
     const response = await api.get(`/spotify/artist/${artistId}/top-tracks`);
     return response.data;
   },
+
+  getAlbumTracks: async (albumId: string) => {
+    const response = await api.get(`/spotify/album/${albumId}/tracks`);
+    return response.data;
+  },
   
   getAudioFeatures: async (trackId: string) => {
     const response = await api.get(`/spotify/audio-features/${trackId}`);

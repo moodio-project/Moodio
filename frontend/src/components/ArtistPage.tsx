@@ -177,7 +177,7 @@ const ArtistPage: React.FC<ArtistPageProps> = ({ user, onLogout }) => {
 
           <div style={{ display: 'flex', alignItems: 'flex-end', gap: '32px' }}>
             <img
-              src={artist.images?.[0]?.url}
+              src={artist.images?.[0]?.url || 'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><circle cx="50" cy="50" r="50" fill="%23282828"/><circle cx="50" cy="38" r="18" fill="%23535353"/><ellipse cx="50" cy="85" rx="28" ry="20" fill="%23535353"/></svg>'}
               alt={artist.name}
               style={{
                 width: '200px',
@@ -186,6 +186,9 @@ const ArtistPage: React.FC<ArtistPageProps> = ({ user, onLogout }) => {
                 objectFit: 'cover',
                 boxShadow: '0 20px 60px rgba(0, 0, 0, 0.5)',
                 border: '4px solid rgba(255, 255, 255, 0.2)'
+              }}
+              onError={(e) => {
+                e.currentTarget.src = 'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><circle cx="50" cy="50" r="50" fill="%23282828"/><circle cx="50" cy="38" r="18" fill="%23535353"/><ellipse cx="50" cy="85" rx="28" ry="20" fill="%23535353"/></svg>';
               }}
             />
             
