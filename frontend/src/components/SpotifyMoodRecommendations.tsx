@@ -106,69 +106,24 @@ const SpotifyMoodRecommendations: React.FC<SpotifyMoodRecommendationsProps> = ({
 
   const getSpotifyMoodRecommendations = async (mood: string) => {
     try {
-      // Genre-specific queries per mood — rotate through them for variety
-      const moodGenreQueries: { [key: string]: string[] } = {
-        happy: [
-          'genre:pop year:2022-2025',
-          'genre:dance-pop year:2022-2025',
-          'feel good hits 2024',
-          'genre:funk year:2020-2025'
-        ],
-        sad: [
-          'genre:sad-indie year:2022-2025',
-          'genre:emo year:2022-2025',
-          'emotional ballads 2024',
-          'genre:singer-songwriter year:2022-2025'
-        ],
-        energetic: [
-          'genre:hip-hop year:2022-2025',
-          'genre:trap year:2022-2025',
-          'genre:edm year:2022-2025',
-          'genre:rap year:2023-2025'
-        ],
-        calm: [
-          'genre:lo-fi year:2022-2025',
-          'genre:chill year:2022-2025',
-          'genre:acoustic year:2022-2025',
-          'relaxing indie 2024'
-        ],
-        excited: [
-          'genre:electronic year:2022-2025',
-          'genre:house year:2022-2025',
-          'party hits 2024',
-          'genre:pop-dance year:2022-2025'
-        ],
-        anxious: [
-          'genre:alternative year:2022-2025',
-          'genre:indie-rock year:2022-2025',
-          'genre:art-rock year:2022-2025',
-          'moody indie 2024'
-        ],
-        angry: [
-          'genre:rock year:2022-2025',
-          'genre:metal year:2022-2025',
-          'genre:punk year:2022-2025',
-          'hard rap 2024'
-        ],
-        tired: [
-          'genre:ambient year:2022-2025',
-          'genre:sleep year:2022-2025',
-          'genre:classical year:2022-2025',
-          'soft acoustic 2024'
-        ]
+      const moodSearchTerms: { [key: string]: string[] } = {
+        happy: ['upbeat pop', 'feel good music', 'happy songs', 'uplifting music'],
+        sad: ['sad songs', 'melancholy music', 'emotional ballads', 'heartbreak songs'],
+        energetic: ['workout music', 'high energy', 'pump up songs', 'dance music'],
+        calm: ['chill music', 'relaxing songs', 'ambient music', 'peaceful music'],
+        excited: ['party music', 'celebration songs', 'exciting music', 'hype music'],
+        anxious: ['moody music', 'indie alternative', 'dark pop', 'tense music'],
+        angry: ['rock music', 'hard rock', 'aggressive music', 'metal songs'],
+        tired: ['sleep music', 'soft acoustic', 'ambient relaxing', 'calm piano']
       };
 
-      const queries = moodGenreQueries[mood] || moodGenreQueries.happy;
-      const query = queries[Math.floor(Math.random() * queries.length)];
+      const searchTerms = moodSearchTerms[mood] || moodSearchTerms.happy;
+      const randomTerm = searchTerms[Math.floor(Math.random() * searchTerms.length)];
 
-      console.log('🎵 Searching popular tracks for mood:', mood, '— query:', query);
-
-      const searchResult = await spotify.search(query, 'track', 20) as any;
+      const searchResult = await spotify.search(randomTerm, 'track', 12) as any;
 
       if (searchResult.tracks?.items?.length > 0) {
-        // Sort by popularity descending, take top 8
         const sorted = [...searchResult.tracks.items]
-          .filter((t: any) => t.popularity > 0)
           .sort((a: any, b: any) => b.popularity - a.popularity);
         return sorted.slice(0, 8);
       }

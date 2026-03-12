@@ -141,14 +141,13 @@ router.get("/currently-playing", authenticateToken, async (req, res) => {
 router.get("/search", authenticateToken, async (req, res) => {
   try {
     console.log("🔍 Search query params:", req.query);
-    const { q, type = "track,artist,album", limit } = req.query;
+    const { q, type = "track,artist,album" } = req.query;
 
     if (!q) {
       return res.status(400).json({ error: "Search query required" });
     }
 
-    const parsedLimit = Math.min(Math.max(parseInt(limit) || 20, 1), 50);
-
+    // Spotify API caps search at 10 results for basic access apps
     const searchResults = await spotifyApi.search(q, type.split(","), {
       limit: 10,
     });
@@ -165,10 +164,9 @@ router.get("/search", authenticateToken, async (req, res) => {
     if (error.statusCode === 401) {
       try {
         await getSpotifyToken();
-        const { q, type = "track,artist,album", limit } = req.query;
-        const retryLimit = Math.min(Math.max(parseInt(limit) || 20, 1), 50);
+        const { q, type = "track,artist,album" } = req.query;
         const searchResults = await spotifyApi.search(q, type.split(","), {
-          limit: retryLimit,
+          limit: 10,
         });
         res.json({
           tracks: searchResults.body.tracks || { items: [] },
