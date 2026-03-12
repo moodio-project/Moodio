@@ -46,7 +46,7 @@ app.use("/auth", authRoutes);
 app.use("/api/auth", authRoutes); // Support both /auth/* and /api/auth/* paths
 app.use("/api/spotify", spotifyRoutes);
 app.use("/api/moods", moodsRoutes);
-app.use("/api/favorites", moodsRoutes); // Favorites are nested under moods router
+app.use("/api", moodsRoutes); // Exposes /api/favorites/* routes from moods router
 app.use("/api/ai", aiRoutes);
 
 // ===== HEALTH CHECKS =====
