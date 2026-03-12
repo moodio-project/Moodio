@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { moods } from '../api';
 import Navigation from './Navigation';
-import SpotifyPlayer from './SpotifyPlayer';
 import SpotifyMoodRecommendations from './SpotifyMoodRecommendations';
 
 interface User {
@@ -153,14 +152,8 @@ const Dashboard: React.FC<DashboardProps> = ({ user, onLogout, spotifyToken, has
         </div>
 
         {/* Main Content Grid */}
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '32px', marginBottom: '32px' }}>
-          
-          {/* Spotify Player */}
-          <SpotifyPlayer 
-            accessToken={spotifyToken} 
-            hasPremium={hasPremium}
-          />
-          
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: '32px', marginBottom: '32px' }}>
+
           {/* Quick Mood Log */}
           <div className="card">
             <h2 style={{ color: 'white', marginBottom: '24px' }}>Quick Mood Check</h2>

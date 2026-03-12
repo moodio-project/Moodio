@@ -3,6 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import Login from './components/Login';
+import SpotifyPlayer from './components/SpotifyPlayer';
 import Dashboard from './components/Dashboard';
 import Profile from './components/Profile';
 import MoodHistory from './components/MoodHistory';
@@ -180,6 +181,7 @@ function App() {
 
   return (
     <BrowserRouter>
+      <div style={{ paddingBottom: user ? '120px' : 0 }}>
       <Routes>
         {/* Login Route */}
         <Route 
@@ -284,6 +286,23 @@ function App() {
           element={<Navigate to="/dashboard" />} 
         />
       </Routes>
+      </div>
+
+      {/* Persistent player — stays mounted across all routes */}
+      {user && (
+        <div style={{
+          position: 'fixed',
+          bottom: 0,
+          left: '240px',
+          right: 0,
+          zIndex: 100,
+          padding: '12px 24px',
+          background: '#181818',
+          borderTop: '1px solid #282828',
+        }}>
+          <SpotifyPlayer accessToken={spotifyToken} hasPremium={hasPremium} />
+        </div>
+      )}
     </BrowserRouter>
   );
 }
