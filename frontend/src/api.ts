@@ -50,6 +50,11 @@ export const moods = {
     return response.data;
   },
   
+  delete: async (id: number) => {
+    const response = await api.delete(`/moods/${id}`);
+    return response.data;
+  },
+
   create: async (mood: string, intensity: number, note: string, track?: any) => {
     const response = await api.post('/moods', {
       mood,

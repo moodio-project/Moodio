@@ -35,6 +35,15 @@ const MoodHistory: React.FC<MoodHistoryProps> = ({ user, onLogout }) => {
     loadMoods();
   }, []);
 
+  const deleteMood = async (id: number) => {
+    try {
+      await moods.delete(id);
+      setUserMoods(prev => prev.filter(m => m.id !== id));
+    } catch (error) {
+      console.error('Failed to delete mood:', error);
+    }
+  };
+
   const loadMoods = async () => {
     try {
       const response: any = await moods.getAll();
@@ -133,7 +142,7 @@ const MoodHistory: React.FC<MoodHistoryProps> = ({ user, onLogout }) => {
                     {dayMoods
                       .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
                       .map((mood) => (
-                        <div 
+                        <div
                           key={mood.id}
                           style={{
                             display: 'flex',
@@ -142,9 +151,32 @@ const MoodHistory: React.FC<MoodHistoryProps> = ({ user, onLogout }) => {
                             background: '#181818',
                             borderRadius: '8px',
                             padding: '16px',
-                            border: '1px solid #282828'
+                            border: '1px solid #282828',
+                            position: 'relative'
                           }}
                         >
+                          <button
+                            onClick={() => deleteMood(mood.id)}
+                            title="Delete mood"
+                            style={{
+                              position: 'absolute',
+                              top: '8px',
+                              right: '8px',
+                              background: 'transparent',
+                              border: 'none',
+                              color: '#535353',
+                              cursor: 'pointer',
+                              fontSize: '16px',
+                              lineHeight: 1,
+                              padding: '2px 4px',
+                              borderRadius: '4px',
+                              transition: 'color 0.2s ease'
+                            }}
+                            onMouseEnter={(e) => e.currentTarget.style.color = '#FF6B6B'}
+                            onMouseLeave={(e) => e.currentTarget.style.color = '#535353'}
+                          >
+                            ✕
+                          </button>
                           <span style={{ fontSize: '32px' }}>
                             {moodEmojis[mood.mood] || '😊'}
                           </span>

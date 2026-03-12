@@ -72,6 +72,25 @@ router.post("/", authenticateToken, (req, res) => {
   }
 });
 
+// Delete mood
+router.delete("/:id", authenticateToken, (req, res) => {
+  const { id } = req.params;
+  db.run(
+    "DELETE FROM moods WHERE id = ? AND user_id = ?",
+    [id, req.user.userId],
+    function (err) {
+      if (err) {
+        console.error("❌ Failed to delete mood:", err);
+        return res.status(500).json({ error: "Failed to delete mood" });
+      }
+      if (this.changes === 0) {
+        return res.status(404).json({ error: "Mood not found" });
+      }
+      res.json({ message: "Mood deleted" });
+    }
+  );
+});
+
 // ===== FAVORITES ROUTES =====
 
 // Get user's favorites
