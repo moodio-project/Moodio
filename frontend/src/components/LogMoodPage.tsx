@@ -79,7 +79,7 @@ const LogMoodPage: React.FC<LogMoodPageProps> = ({ user, onLogout, spotifyToken 
     setIsLoading(true);
     try {
       // Use the working API method (like Dashboard does)
-      await moods.create(selectedMood, moodIntensity, notes);
+      await moods.create(selectedMood, moodIntensity, notes, currentTrack);
       
       // Reset form
       setSelectedMood('');

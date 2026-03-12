@@ -27,12 +27,13 @@ router.get("/", authenticateToken, (req, res) => {
 
 // Create mood
 router.post("/", authenticateToken, (req, res) => {
-  const { mood, intensity, note } = req.body;
+  const { mood, intensity, note, song_id, song_name, artist_name } = req.body;
 
   console.log("🎵 Creating mood:", {
     mood,
     intensity,
     note,
+    song_name,
     userId: req.user.userId,
   });
 
@@ -40,8 +41,8 @@ router.post("/", authenticateToken, (req, res) => {
     const now = new Date().toISOString();
 
     db.run(
-      "INSERT INTO moods (user_id, mood, intensity, note, created_at) VALUES (?, ?, ?, ?, ?)",
-      [req.user.userId, mood, intensity, note, now],
+      "INSERT INTO moods (user_id, mood, intensity, note, song_id, song_name, artist_name, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
+      [req.user.userId, mood, intensity, note, song_id, song_name, artist_name, now],
       function (err) {
         if (err) {
           console.error("❌ Database error:", err);

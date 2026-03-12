@@ -50,8 +50,15 @@ export const moods = {
     return response.data;
   },
   
-  create: async (mood: string, intensity: number, note: string) => {
-    const response = await api.post('/moods', { mood, intensity, note });
+  create: async (mood: string, intensity: number, note: string, track?: any) => {
+    const response = await api.post('/moods', {
+      mood,
+      intensity,
+      note,
+      song_id: track?.id || null,
+      song_name: track?.name || null,
+      artist_name: track?.artists?.[0]?.name || null,
+    });
     return response.data;
   }
 };
