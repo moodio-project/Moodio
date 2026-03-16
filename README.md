@@ -2,7 +2,23 @@
 
 **Discover how your music affects your mood**
 
-A full-stack music companion app that enables users to track their emotional patterns, discover personalized music recommendations, and gain insights into how music shapes their well-being through seamless Spotify integration.
+## What is Moodio?
+
+Moodio is a full-stack music companion app that connects your listening habits to your emotional well-being. It integrates with Spotify so you can stream music, log how you feel, and see patterns in how the music you listen to shapes your mood over time.
+
+## Why was it built?
+
+Most people listen to music every day without thinking about the emotional impact it has on them. Moodio was built to change that — to make music listeners more **conscious and intentional** about how music affects their mental and emotional state. By surfacing those patterns visually, Moodio helps users build a healthier, more self-aware relationship with music.
+
+## What problem does it solve?
+
+Music has a powerful effect on emotions, but that effect is largely invisible. There's no easy way for the average listener to answer questions like:
+
+- What kind of music do I reach for when I'm anxious?
+- Does the music I play late at night make me feel worse?
+- Are there patterns between what I listen to and how I feel the next day?
+
+Moodio solves this by letting users log their mood alongside their listening activity and then visualizing those patterns over time — turning an unconscious habit into an insight.
 
 ## Artist Exploration (Albums)
 
@@ -73,25 +89,73 @@ This demonstrates Moodio's core music discovery and playback capabilities, allow
 ## 🛠️ Tech Stack
 
 ### Frontend
-- **React 18** with TypeScript for type-safe component development
-- **Modern CSS** with a custom design system matching Spotify aesthetics
-- **Responsive Design** optimized for mobile and desktop
+- **React 19** with TypeScript
+- **Tailwind CSS** with a custom dark theme
+- **Chart.js** (via `react-chartjs-2`) for mood visualization
+- **React Router v7** for client-side navigation
 
 ### Backend
-- **Node.js** with Express.js for robust server architecture
-- **SQLite** database for efficient data storage
-- **JWT Authentication** for secure user sessions
+- **Node.js** with Express.js
+- **PostgreSQL** (production) / **SQLite** (development) for data storage
+- **JWT** + **bcryptjs** for authentication and password hashing
 
 ### APIs & Integrations
-- **Spotify Web API** for music data and user authentication
-- **Spotify Web Playbook SDK** for real-time music streaming
-- **OAuth 2.0** for secure authentication flow
+- **Spotify Web API** for music data, search, and user authentication
+- **Spotify Web Playback SDK** for in-browser music streaming
+- **OpenAI API** for intelligent mood-based music recommendations
+- **Genius Lyrics API** for song lyrics data
+- **OAuth 2.0** for secure Spotify authentication flow
 
-### Tools & Deployment
-- **Git** version control with feature branch workflow
-- **REST API** architecture with comprehensive error handling
-- **[Deployment Platform]** for production hosting
 
+## 🌐 Live Demo
+
+> _Add your deployed URL here once live (e.g. Netlify, Render, Railway)_
+
+## 🚀 Running Locally
+
+### Prerequisites
+- Node.js (v18+)
+- A [Spotify Developer](https://developer.spotify.com/dashboard) app with Client ID, Client Secret, and a redirect URI set
+- An OpenAI API key
+- A Genius API key
+
+### Setup
+
+1. **Clone the repo**
+   ```bash
+   git clone https://github.com/KrisNoel23/Moodio.git
+   cd Moodio
+   ```
+
+2. **Backend**
+   ```bash
+   cd backend
+   npm install
+   ```
+   Create a `.env` file in `backend/` with:
+   ```
+   SPOTIFY_CLIENT_ID=your_client_id
+   SPOTIFY_CLIENT_SECRET=your_client_secret
+   SPOTIFY_REDIRECT_URI=http://localhost:3001/auth/callback
+   JWT_SECRET=your_jwt_secret
+   OPENAI_API_KEY=your_openai_key
+   GENIUS_ACCESS_TOKEN=your_genius_token
+   ```
+   Then start the server:
+   ```bash
+   npm run dev   # runs on http://localhost:3001
+   ```
+
+3. **Frontend**
+   ```bash
+   cd frontend
+   npm install
+   npm start     # runs on http://localhost:3000
+   ```
+
+4. Open [http://localhost:3000](http://localhost:3000) and log in with your Spotify account.
+
+> **Note:** Music playback requires a Spotify Premium account.
 
 ## 🎯 Usage
 
@@ -120,8 +184,6 @@ moodio/
 └── README.md
 ```
 
- a Pull Request
-
 ## 📄 License
 
 This project is licensed under the MIT License - see the [LICENSE] file for details.
@@ -138,7 +200,7 @@ This project is licensed under the MIT License - see the [LICENSE] file for deta
 **Kristopher Noel**  
 📧 noelkris500@gmail.com  
 🔗 [LinkedIn](https://www.linkedin.com/in/kristhesoftwareengineer/)  
-🐙 [GitHub]([your-github-url](https://github.com/KrisNoel23))  
+🐙 [GitHub](https://github.com/KrisNoel23)
 🌐 [Portfolio](https://krisnoelportfolio.netlify.app/)
 
 ---
