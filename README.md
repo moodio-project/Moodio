@@ -80,7 +80,8 @@ This demonstrates Moodio's core music discovery and playback capabilities, allow
 
 ## Mood History - Your Emotional Listening Journal
 
-![Moodio Mood History](https://github.com/user-attachments/assets/REPLACE_WITH_UPLOADED_IMAGE_ID)
+![Moodio Mood History] <img width="1512" height="861" alt="Screenshot 2026-03-27 at 12 00 20 PM" src="https://github.com/user-attachments/assets/0c8b5246-a3d7-4a19-a080-3f2592149414" />
+
 
 Features shown:
 
