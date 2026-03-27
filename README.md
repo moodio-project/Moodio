@@ -78,6 +78,31 @@ Track Details - Shows artist, album, and duration at a glance
 
 This demonstrates Moodio's core music discovery and playback capabilities, allowing users to search, play, and save their favorite tracks while tracking how music affects their emotional state.
 
+## Mood History - Your Emotional Listening Journal
+
+![Moodio Mood History](https://github.com/user-attachments/assets/REPLACE_WITH_UPLOADED_IMAGE_ID)
+
+Features shown:
+
+Chronological mood log - Every mood entry is grouped by date so you can see your emotional journey day by day
+Rich entry cards - Each entry shows mood label, intensity badge (e.g. 10/10), time logged, and any personal notes you wrote
+Currently playing track - The song you were listening to at the time of the log is displayed directly on the card, linking music to emotion
+Mood emoji indicators - Color-coded emoji icons make it easy to scan your history at a glance (😊 Happy, ☮️ Peaceful, ⚡ Energetic)
+Dismissible entries - Each card has an X button so you can remove entries from your history
+Live music player - The bottom bar shows the currently playing track with playback controls, staying persistent as you browse your history
+
+User Experience:
+Users can scroll back through their mood history and instantly see the connection between what they were listening to and how they felt. Entries like "I really like this song" logged to "No Pole" by Don Toliver, or "Nostalgic!" logged to "Headlines" by Drake, build a personal diary of music and emotion over time.
+
+Technical Implementation:
+
+React TypeScript with date-grouped list rendering
+SQLite database storing mood, intensity, notes, and linked track metadata
+Persistent Spotify Web Playback SDK player rendered across all pages
+Real-time delete functionality with instant UI updates
+
+This demonstrates Moodio's core value proposition: turning passive listening into a conscious, trackable emotional experience.
+
 ## ✨ Features
 
 - **🔐 Secure Spotify Authentication** - OAuth 2.0 integration for seamless login
