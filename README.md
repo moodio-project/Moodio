@@ -2,9 +2,11 @@
 
 **Discover how your music affects your mood**
 
+> **Moodio is built as an extension of Spotify — not a replacement.** It uses your existing Spotify account for login, music streaming, and personalized recommendations. A **Spotify Premium account is required** to use the music playback features; free Spotify accounts cannot stream music through Moodio.
+
 ## What is Moodio?
 
-Moodio is a full-stack music companion app that connects your listening habits to your emotional well-being. It integrates with Spotify so you can stream music, log how you feel, and see patterns in how the music you listen to shapes your mood over time.
+Moodio is a full-stack music companion app that connects your listening habits to your emotional well-being. Think of it as a layer on top of Spotify — it integrates with your account so you can stream music, log how you feel, and see patterns in how the music you listen to shapes your mood over time.
 
 ## Why was it built?
 
