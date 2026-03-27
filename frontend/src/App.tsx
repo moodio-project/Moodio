@@ -27,39 +27,25 @@ function App() {
   const [hasPremium, setHasPremium] = useState<boolean>(false);
 
   useEffect(() => {
-    console.log('🚀 App starting - checking existing tokens...');
-    
     const token = localStorage.getItem('token');
     const existingSpotifyToken = localStorage.getItem('spotify_token');
     const premiumStatus = localStorage.getItem('has_premium');
-    
-    console.log('📦 Local storage check:', {
-      hasJWTToken: !!token,
-      hasSpotifyToken: !!existingSpotifyToken,
-      premiumStatus: premiumStatus,
-      spotifyTokenLength: existingSpotifyToken?.length
-    });
-    
-    // Load existing Spotify token if available
+
     if (existingSpotifyToken) {
-      console.log('✅ Found existing Spotify token');
       setSpotifyToken(existingSpotifyToken);
     }
-    
-    // Load Premium status
+
     if (premiumStatus === 'true') {
-      console.log('✅ Found Premium status: true');
       setHasPremium(true);
     }
-    
+
     if (token) {
       auth.getProfile()
         .then((response: any) => {
-          console.log('✅ Profile loaded:', response.user);
           setUser(response.user);
         })
         .catch((error) => {
-          console.error('❌ Profile loading failed:', error);
+          console.error('Profile loading failed:', error);
           localStorage.removeItem('token');
           localStorage.removeItem('spotify_token');
           localStorage.removeItem('has_premium');
@@ -68,7 +54,6 @@ function App() {
         })
         .finally(() => setLoading(false));
     } else {
-      console.log('❌ No JWT token found');
       setLoading(false);
     }
   }, []);
@@ -78,75 +63,34 @@ function App() {
     const urlParams = new URLSearchParams(window.location.search);
     const token = urlParams.get('token');
     const userParam = urlParams.get('user');
-    
-    console.log('🔍 Checking URL params:', {
-      hasToken: !!token,
-      hasUserParam: !!userParam,
-      fullURL: window.location.href
-    });
-    
+
     if (token && userParam) {
       try {
-        console.log('📥 Parsing OAuth response...');
         const userData = JSON.parse(decodeURIComponent(userParam));
-        
-        console.log('👤 Parsed user data:', {
-          username: userData.username,
-          hasSpotifyToken: !!userData.spotify_token,
-          hasPremium: userData.has_premium,
-          spotifyProduct: userData.spotify_product,
-          spotifyTokenLength: userData.spotify_token?.length
-        });
-        
         handleLogin(userData, token, userData.spotify_token, userData.has_premium);
-        
-        // Clean up URL
         window.history.replaceState({}, document.title, '/dashboard');
       } catch (error) {
-        console.error('❌ Failed to parse OAuth response:', error);
+        console.error('Failed to parse OAuth response:', error);
       }
     }
   }, []);
 
   const handleLogin = (userData: User, token: string, spotifyAccessToken?: string, premiumStatus?: boolean) => {
-    console.log('🔐 handleLogin called with:', {
-      user: userData.username,
-      hasJWTToken: !!token,
-      hasSpotifyToken: !!spotifyAccessToken,
-      premiumStatus: premiumStatus,
-      spotifyTokenLength: spotifyAccessToken?.length
-    });
-    
     setUser(userData);
     localStorage.setItem('token', token);
-    
+
     if (spotifyAccessToken) {
-      console.log('💾 Storing Spotify token:', spotifyAccessToken.substring(0, 20) + '...');
       setSpotifyToken(spotifyAccessToken);
       localStorage.setItem('spotify_token', spotifyAccessToken);
-    } else {
-      console.warn('⚠️ No Spotify token provided in handleLogin');
-    }
-    
-    if (premiumStatus !== undefined) {
-      console.log('💾 Storing Premium status:', premiumStatus);
-      setHasPremium(premiumStatus);
-      localStorage.setItem('has_premium', premiumStatus.toString());
-    } else {
-      console.warn('⚠️ No Premium status provided in handleLogin');
     }
 
-    // Debug final state
-    console.log('🔍 Final state after login:', {
-      spotifyTokenSet: !!spotifyAccessToken,
-      premiumSet: premiumStatus,
-      localStorageSpotifyToken: localStorage.getItem('spotify_token')?.substring(0, 20) + '...',
-      localStoragePremium: localStorage.getItem('has_premium')
-    });
+    if (premiumStatus !== undefined) {
+      setHasPremium(premiumStatus);
+      localStorage.setItem('has_premium', premiumStatus.toString());
+    }
   };
 
   const handleLogout = () => {
-    console.log('👋 Logging out - clearing all tokens');
     setUser(null);
     setSpotifyToken(null);
     setHasPremium(false);
@@ -172,13 +116,6 @@ function App() {
       </div>
     );
   }
-
-  console.log('🎯 Rendering App with state:', {
-    hasUser: !!user,
-    hasSpotifyToken: !!spotifyToken,
-    hasPremium: hasPremium,
-    spotifyTokenLength: spotifyToken?.length
-  });
 
   return (
     <BrowserRouter>
@@ -210,11 +147,9 @@ function App() {
           path="/search" 
           element={
             user ? 
-            <SearchPage 
-              user={user} 
+            <SearchPage
+              user={user}
               onLogout={handleLogout}
-              spotifyToken={spotifyToken}
-              hasPremium={hasPremium}
             /> : 
             <Navigate to="/login" />
           } 
@@ -225,11 +160,10 @@ function App() {
           path="/artist/:artistId" 
           element={
             user ? 
-            <ArtistPage 
-              user={user} 
+            <ArtistPage
+              user={user}
               onLogout={handleLogout}
               spotifyToken={spotifyToken}
-              hasPremium={hasPremium}
             /> : 
             <Navigate to="/login" />
           } 
@@ -253,11 +187,10 @@ function App() {
           path="/mood-log" 
           element={
             user ? 
-            <LogMoodPage 
-              user={user} 
+            <LogMoodPage
+              user={user}
               onLogout={handleLogout}
               spotifyToken={spotifyToken}
-              hasPremium={hasPremium}
             /> : 
             <Navigate to="/login" />
           } 

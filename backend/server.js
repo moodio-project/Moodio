@@ -35,13 +35,16 @@ app.use(express.json());
 
 // ===== MOUNT ROUTES =====
 // Routes that need userTokens use factory functions: require()(userTokens)
-const debugRoutes = require("./routes/debug.routes")(userTokens);
 const authRoutes = require("./routes/auth.routes")(userTokens);
 const spotifyRoutes = require("./routes/spotify.routes")(userTokens);
 const moodsRoutes = require("./routes/moods.routes");
 const aiRoutes = require("./routes/ai.routes");
 
-app.use("/debug", debugRoutes);
+if (process.env.NODE_ENV !== "production") {
+  const debugRoutes = require("./routes/debug.routes")(userTokens);
+  app.use("/debug", debugRoutes);
+}
+
 app.use("/auth", authRoutes);
 app.use("/api/auth", authRoutes); // Support both /auth/* and /api/auth/* paths
 app.use("/api/spotify", spotifyRoutes);

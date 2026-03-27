@@ -8,8 +8,6 @@ interface SpotifyPlayerProps {
 }
 
 const SpotifyPlayer: React.FC<SpotifyPlayerProps> = ({ accessToken, hasPremium }) => {
-  console.log('🎵 SpotifyPlayer component mounted!', { accessToken: !!accessToken, hasPremium });
-  
   const [player, setPlayer] = useState<any>(null);
   const [deviceId, setDeviceId] = useState<string>('');
   const [currentTrack, setCurrentTrack] = useState<any>(null);
@@ -19,11 +17,8 @@ const SpotifyPlayer: React.FC<SpotifyPlayerProps> = ({ accessToken, hasPremium }
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  const BACKEND_URL = 'http://localhost:3001';
-
   useEffect(() => {
     if (accessToken && hasPremium) {
-      console.log('✅ Have Spotify token and Premium status, initializing Web Playback SDK...');
       initializeWebPlaybackSDK();
     } else {
       setLoading(false);
@@ -42,16 +37,12 @@ const SpotifyPlayer: React.FC<SpotifyPlayerProps> = ({ accessToken, hasPremium }
       return;
     }
 
-    // Load the SDK script
-    console.log('📥 Loading Spotify Web Playback SDK...');
     const script = document.createElement('script');
     script.src = 'https://sdk.scdn.co/spotify-player.js';
     script.async = true;
     document.body.appendChild(script);
 
-    // SDK ready callback
     window.onSpotifyWebPlaybackSDKReady = () => {
-      console.log('✅ Spotify SDK loaded, creating player...');
       createPlayer();
     };
   };
@@ -66,7 +57,6 @@ const SpotifyPlayer: React.FC<SpotifyPlayerProps> = ({ accessToken, hasPremium }
     const spotifyPlayer = new window.Spotify.Player({
       name: 'Moodio Player',
       getOAuthToken: (cb: (token: string) => void) => {
-        console.log('🔑 Providing OAuth token to Spotify Player');
         cb(accessToken);
       },
       volume: 0.5
@@ -98,7 +88,6 @@ const SpotifyPlayer: React.FC<SpotifyPlayerProps> = ({ accessToken, hasPremium }
 
     // Ready event - player is connected and ready
     spotifyPlayer.addListener('ready', ({ device_id }: any) => {
-      console.log('✅ Spotify Player ready! Device ID:', device_id);
       setDeviceId(device_id);
       setPlayer(spotifyPlayer);
       setError(null);
@@ -106,14 +95,11 @@ const SpotifyPlayer: React.FC<SpotifyPlayerProps> = ({ accessToken, hasPremium }
     });
 
     // Not ready event
-    spotifyPlayer.addListener('not_ready', ({ device_id }: any) => {
-      console.log('⚠️ Device went offline:', device_id);
-    });
+    spotifyPlayer.addListener('not_ready', (_: any) => {});
 
     // Player state changes (track info, play/pause, etc.)
     spotifyPlayer.addListener('player_state_changed', (state: any) => {
       if (!state) {
-        console.log('📱 Player state: No active session');
         setCurrentTrack(null);
         setIsPlaying(false);
         setPosition(0);
@@ -121,25 +107,14 @@ const SpotifyPlayer: React.FC<SpotifyPlayerProps> = ({ accessToken, hasPremium }
         return;
       }
 
-      console.log('🎵 Player state changed:', {
-        track: state.track_window.current_track?.name,
-        paused: state.paused,
-        position: state.position,
-        duration: state.duration
-      });
-
       setCurrentTrack(state.track_window.current_track);
       setIsPlaying(!state.paused);
       setPosition(state.position);
       setDuration(state.duration);
     });
 
-    // Connect to the player
-    console.log('🔗 Connecting to Spotify Player...');
     spotifyPlayer.connect().then((success: boolean) => {
-      if (success) {
-        console.log('✅ Successfully connected to Spotify Player');
-      } else {
+      if (!success) {
         console.error('❌ Failed to connect to Spotify Player');
         setError('Failed to connect to Spotify');
         setLoading(false);
@@ -149,12 +124,7 @@ const SpotifyPlayer: React.FC<SpotifyPlayerProps> = ({ accessToken, hasPremium }
 
   // Simplified playTrack - ensure songs start from beginning
   const playTrack = async (trackUri: string) => {
-    if (!deviceId || !accessToken) {
-      console.log('❌ Cannot play track: no device or token');
-      return;
-    }
-
-    console.log(`🎵 Playing track: ${trackUri} on device: ${deviceId}`);
+    if (!deviceId || !accessToken) return;
 
     try {
       // Start playback from the beginning
@@ -170,9 +140,7 @@ const SpotifyPlayer: React.FC<SpotifyPlayerProps> = ({ accessToken, hasPremium }
         }
       });
 
-      if (response.ok || response.status === 204) {
-        console.log('✅ Playback started successfully from beginning');
-      } else {
+      if (!response.ok && response.status !== 204) {
         const errorText = await response.text();
         console.error('❌ Playback failed:', response.status, errorText);
       }
@@ -181,14 +149,11 @@ const SpotifyPlayer: React.FC<SpotifyPlayerProps> = ({ accessToken, hasPremium }
     }
   };
 
-  // Add this single, clean useEffect after your playTrack function
-// Replace any existing moodioPlayTrack useEffects with ONLY this:
-useEffect(() => {
-  if (deviceId && accessToken && playTrack) {
-    (window as any).moodioPlayTrack = playTrack;
-    console.log('✅ moodioPlayTrack attached:', typeof (window as any).moodioPlayTrack);
-  }
-}, [deviceId, accessToken]); // Remove playTrack from dependencies
+  useEffect(() => {
+    if (deviceId && accessToken) {
+      (window as any).moodioPlayTrack = playTrack;
+    }
+  }, [deviceId, accessToken]);
 
   // Fixed position updates - only increment when playing, reset properly for new tracks
   useEffect(() => {
@@ -214,7 +179,6 @@ useEffect(() => {
         if (state && state.track_window.current_track) {
           // Only update if the track ID changed (new song)
           if (currentTrack?.id !== state.track_window.current_track.id) {
-            console.log('🎵 New track detected, syncing state...');
             setCurrentTrack(state.track_window.current_track);
             setIsPlaying(!state.paused);
             setPosition(state.position); // Use actual position for new tracks
@@ -222,7 +186,6 @@ useEffect(() => {
           }
           // Only update play/pause state, not position for same track
           else if (isPlaying !== !state.paused) {
-            console.log('⏯️ Play/pause state changed');
             setIsPlaying(!state.paused);
           }
         }
@@ -243,8 +206,6 @@ useEffect(() => {
 
     try {
       const endpoint = isPlaying ? 'pause' : 'play';
-      console.log(isPlaying ? '⏸️ Pausing playback' : '▶️ Resuming playback');
-      
       const response = await fetch(`https://api.spotify.com/v1/me/player/${endpoint}`, {
         method: 'PUT',
         headers: {
@@ -254,8 +215,6 @@ useEffect(() => {
       });
       
       if (response.ok || response.status === 204) {
-        console.log(`✅ ${endpoint} successful`);
-        // Manually update state for immediate feedback
         setIsPlaying(!isPlaying);
       } else {
         console.error(`❌ ${endpoint} failed:`, response.status);

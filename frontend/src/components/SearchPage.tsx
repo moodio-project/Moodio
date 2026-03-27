@@ -12,8 +12,6 @@ interface User {
 interface SearchPageProps {
     user: User;
     onLogout: () => void;
-    spotifyToken?: string | null;
-    hasPremium?: boolean;
   }
   
 const SearchPage: React.FC<SearchPageProps> = ({ user, onLogout }) => {
@@ -22,15 +20,10 @@ const SearchPage: React.FC<SearchPageProps> = ({ user, onLogout }) => {
   const [loading, setLoading] = useState(false);
   const [activeTab, setActiveTab] = useState('tracks');
 
-  // ✅ ADD THIS PLAY FUNCTION
-  const playTrack = (trackUri: string, trackName: string) => {
-    console.log('🎵 Attempting to play:', trackName, trackUri);
-    
+  const playTrack = (trackUri: string) => {
     if ((window as any).moodioPlayTrack) {
       (window as any).moodioPlayTrack(trackUri);
-      console.log('✅ Play command sent');
     } else {
-      console.log('❌ Player not ready');
       alert('Music player not ready. Please wait a moment and try again.');
     }
   };
@@ -202,7 +195,7 @@ const SearchPage: React.FC<SearchPageProps> = ({ user, onLogout }) => {
                       <button
                         onClick={(e) => {
                           e.stopPropagation(); // Prevent row click
-                          playTrack(track.uri, track.name);
+                          playTrack(track.uri);
                         }}
                         style={{
                           background: '#1DB954',

@@ -14,7 +14,6 @@ interface LogMoodPageProps {
   user: User;
   onLogout: () => void;
   spotifyToken?: string | null;
-  hasPremium?: boolean;
 }
 
 interface CurrentTrack {

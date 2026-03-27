@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { moods } from '../api';
 import Navigation from './Navigation';
 import SpotifyMoodRecommendations from './SpotifyMoodRecommendations';
@@ -9,14 +9,6 @@ interface User {
   email: string;
 }
 
-interface Mood {
-  id: number;
-  mood: string;
-  intensity: number;
-  note: string;
-  created_at: string;
-}
-
 interface DashboardProps {
   user: User;
   onLogout: () => void;
@@ -24,8 +16,7 @@ interface DashboardProps {
   hasPremium?: boolean;
 }
 
-const Dashboard: React.FC<DashboardProps> = ({ user, onLogout, spotifyToken, hasPremium }) => {
-  const [userMoods, setUserMoods] = useState<Mood[]>([]);
+const Dashboard: React.FC<DashboardProps> = ({ user, onLogout }) => {
   const [showMoodForm, setShowMoodForm] = useState(false);
   const [newMood, setNewMood] = useState({
     mood: 'happy',
@@ -33,50 +24,15 @@ const Dashboard: React.FC<DashboardProps> = ({ user, onLogout, spotifyToken, has
     note: ''
   });
 
-  useEffect(() => {
-    console.log('🎯 Dashboard received props:', {
-      hasUser: !!user,
-      hasSpotifyToken: !!spotifyToken,
-      hasPremium: hasPremium,
-      spotifyTokenLength: spotifyToken?.length,
-      spotifyTokenPreview: spotifyToken ? spotifyToken.substring(0, 20) + '...' : 'None'
-    });
-  }, [user, spotifyToken, hasPremium]);
-
-  useEffect(() => {
-    loadMoods();
-  }, []);
-
-  const loadMoods = async () => {
-    try {
-      const response = await moods.getAll() as any;
-      setUserMoods(response.moods || []);
-    } catch (error) {
-      console.error('Failed to load moods:', error);
-    }
-  };
-
   const handleMoodSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
-      console.log('🔍 Dashboard newMood data:', newMood);
-      console.log('🔍 Individual values:', {
-        mood: newMood.mood,
-        intensity: newMood.intensity,
-        note: newMood.note,
-        intensityType: typeof newMood.intensity
-      });
-      
       await moods.create(newMood.mood, newMood.intensity, newMood.note);
       setNewMood({ mood: 'happy', intensity: 5, note: '' });
       setShowMoodForm(false);
-      loadMoods();
-      
-      // Show success notification
       showNotification('Mood logged successfully! 🎵');
     } catch (error) {
-      console.error('❌ Failed to save mood:', error);
-      console.error('❌ Error details:', (error as any).response?.data || (error as any).message);
+      console.error('Failed to save mood:', error);
       showNotification('Failed to save mood. Please try again.', 'error');
     }
   };
@@ -117,17 +73,6 @@ const Dashboard: React.FC<DashboardProps> = ({ user, onLogout, spotifyToken, has
         }
       }, 300);
     }, 3000);
-  };
-
-  const moodEmojis: { [key: string]: string } = {
-    happy: '😊',
-    sad: '😢',
-    excited: '🤩',
-    calm: '😌',
-    anxious: '😰',
-    angry: '😠',
-    energetic: '⚡',
-    tired: '😴'
   };
 
   return (

@@ -1,8 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import Navigation from './Navigation';
-import { spotify } from '../api';
-
 
 interface User {
   id: number;
@@ -14,7 +12,6 @@ interface ArtistPageProps {
     user: User;
     onLogout: () => void;
     spotifyToken?: string | null;
-    hasPremium?: boolean;
   }
 
 const ArtistPage: React.FC<ArtistPageProps> = ({ user, onLogout, spotifyToken }) => {
